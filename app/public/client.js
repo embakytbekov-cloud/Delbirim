@@ -1,119 +1,1259 @@
-/**
- * The client net harness + a tic-tac-toe renderer.
- *
- * Split deliberately: `connect()` below is game-agnostic plumbing you keep, and
- * `render()` is the part you rewrite for your own game. The server is
- * authoritative — this file never decides anything, it only sends intents
- * ({type:"action"}) and draws whatever `view` comes back.
- */
+const root=document.querySelector('#app');
+root.innerHTML=`<main class="game"><video id="themeVideoBg" class="themeVideoBg hidden" src="https://kiss-meet-club.higgsfield.app/theme-instagram.mp4" autoplay muted loop playsinline preload="auto"></video><section class="table"><div class="top"><div class="heart"><span class="heartIcon">♥</span><b id="heartBalance">0</b></div><div class="navicons"><button class="roundIcon trophyPhotoBtn" type="button" aria-label="Рейтинг"><img src="https://kiss-meet-club.higgsfield.app/assets/trophy-3d.svg?v=4" alt=""></button><button class="themeQuick themeTopBtn" id="themeBtn" type="button" title="Сменить фон" aria-label="Сменить фон"><span class="themeOrbIcon"><span class="themeMiniFrame"></span></span></button><button class="roundIcon settingsPhotoBtn" id="settingsBtn" type="button" aria-label="Настройки"><img src="https://kiss-meet-club.higgsfield.app/assets/settings-premium.svg?v=2" alt=""></button></div><div class="topRight"><button class="neonTableBtn" id="tableButton" type="button" title="Стол 165" aria-label="Стол 165"><span class="neonTableText"><b>Стол</b><strong>165</strong></span><span class="neonTableOrb" aria-hidden="true"><span class="neonSnake">⌁</span></span></button></div></div><div class="roomStats"></div><div class="people" id="players"></div><div class="centerBottle"><div class="turnText" id="turnText">Ждём следующего хода</div><div class="heartSpinner" id="bottle" aria-label="Сердце-стрелка"><span class="spinnerHeart">♥</span><span class="spinnerLine"></span><span class="spinnerArrow">➤</span><span class="spinnerHub">●</span></div><button class="spin" id="spin">Крутить</button></div><div class="heartDuel hidden" id="heartDuel"><div class="heartDuelTitle">Твой выбор <span id="heartDuelSeconds">9</span></div><div class="heartDuelPair"><div class="heartDuelCard"><div class="heartDuelPhoto" id="heartDuelMePhoto"></div><div class="heartDuelName" id="heartDuelMeName"></div></div><div class="heartDuelVs">♥</div><div class="heartDuelCard"><div class="heartDuelPhoto" id="heartDuelTargetPhoto"></div><div class="heartDuelName" id="heartDuelTargetName"></div></div></div><div class="heartDuelActions"><button id="heartDuelSlap" type="button">Отказать</button><button id="heartDuelKiss" type="button">Поцеловать</button></div><div class="heartDuelNote hidden" id="heartDuelNote"></div></div><div class="giftfx" id="giftfx"></div><div class="tableMediaTools"><button class="chatTool youtubeQuick" id="youtubeBtn" title="YouTube" aria-label="YouTube"><span class="ytIcon">▶</span><span class="ytText">YouTube</span></button><button class="chatTool liveTalkBtn" id="headphonesBtn" title="Живой голосовой чат" aria-label="Живой голосовой чат"><svg viewBox="0 0 32 32" aria-hidden="true"><circle class="talkHead" cx="11" cy="10" r="4.2"/><path class="talkBody" d="M4.8 23c.7-5 3.1-7.5 6.2-7.5s5.5 2.5 6.2 7.5"/><path class="talkWave wave1" d="M20 9.5c2 1.5 2 5.5 0 7"/><path class="talkWave wave2" d="M24 6.5c3.7 3.2 3.7 9.8 0 13"/></svg></button><button class="chatTool" id="uploadBtn" title="Видео">🎬</button></div><div class="themePicker hidden" id="themePicker"><button class="themeBackdrop" id="themeBackdrop" type="button"></button><div class="themePanel"><div class="themeHead"><button class="themeBack hidden" id="themeBack" type="button" aria-label="Назад">‹</button><b id="themeTitle">Выбери тему фона</b><button id="themeClose" type="button">×</button></div><div class="themeGrid" id="themeGrid"></div><div class="customThemeRow"><button id="customThemeBtn" class="customThemeBtn" type="button"><span class="customThemeIcon">📷</span><span><b>Свой фон</b><small>Любая фотография · 20 ♥</small></span></button></div><div class="romanticPlaces"><div class="placesTitle">Романтичные места</div><div id="placeGallery" class="placeGallery"></div></div></div></div></section><section class="chatArea" id="chatArea"><div class="mediaFloating hidden" id="mediaBox"><div class="mediaHead"><b id="mediaTitle">Видео</b><button id="closeMedia" aria-label="Закрыть видео">×</button></div><div class="mediaFrame" id="videoFrame">🎬</div></div><div class="feed" id="feed"></div><div class="composer"><button class="chatTool composerMic" id="voiceBtn" title="Голосовое сообщение" aria-label="Голосовое сообщение">🎙</button><div class="voiceComposer hidden" id="voiceComposer"><button class="voiceCancel" id="voiceCancel" type="button" aria-label="Отменить запись">×</button><div class="voiceWave" id="voiceWave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span class="voiceTime" id="voiceTime">0:00</span><button class="voiceStop" id="voiceStop" type="button" aria-label="Остановить запись">■</button><button class="voiceSend hidden" id="voiceSend" type="button" aria-label="Отправить голосовое">➤</button></div><input id="msg" maxlength="280" placeholder="Написать сообщение"><button class="send" id="send">➤</button></div></section></main><div class="playerSheet hidden" id="playerSheet"><button class="sheetBackdrop" id="sheetBackdrop"></button><div class="sheetCard giftCard"><div class="sheetPerson"><div class="sheetPhoto" id="sheetPhoto"></div><div><b id="sheetName">Игрок</b><span id="sheetHint">Отправить подарок</span></div><button class="sheetClose" id="sheetClose">×</button></div><div class="giftToolbar"><div><b>Подарки</b></div><button class="giftSound" id="giftSound" type="button">🔊</button></div><div class="giftTabs" id="giftTabs"><button class="active" data-gift-cat="popular">🔥 Популярные</button><button data-gift-cat="friendly">🤝 суйуу</button><button data-gift-cat="fun">😂 Приколы</button><button data-gift-cat="style">😎 vibe</button><button data-gift-cat="tiktok">🎵 TikTok</button><button data-gift-cat="luxury">👑 насаат</button><button data-gift-cat="epic">✨ молодеж kg</button><button data-gift-cat="food">🍔 aitysh duinosu</button></div><div class="sheetGifts tiktokGifts" id="sheetGiftbar"></div><div class="giftFooter" id="giftFooter"><button id="giftTopup" class="giftTopup" type="button">♥ Пополнение счета</button><span class="giftBalancePill">♥ <strong id="giftBalance">0</strong></span><div class="giftSelected" id="giftSelected">Коснись подарка — отправится сразу</div></div></div></div><div class="giftEpicOverlay hidden" id="giftEpicOverlay" aria-hidden="true"><div class="giftEpicBackdrop"></div><div class="giftEpicStage"><div class="giftEpicAura"></div><div class="giftEpicEmoji" id="giftEpicEmoji">🦁</div><div class="giftEpicTitle" id="giftEpicTitle">Лев</div><div class="giftEpicRoute" id="giftEpicRoute"></div><div class="giftEpicParticles"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div></div><div class="playerProfile hidden" id="playerProfile"><button class="profileBackdrop" id="profileBackdrop"></button><div class="profileCard profileExact"><button class="profileClose" id="profileClose" aria-label="Закрыть">×</button><div class="profileHero" id="profileHero"><div class="profileExactInfo"><b id="profileName">Игрок</b><div class="profileStats"><span>💋 <b id="profileKisses">0</b></span><span>♟ <b id="profileLikes">0</b></span></div></div></div><div class="profileBelow"><div class="profileGallery" id="profileGallery"></div><div class="profileActionBar"><button type="button" class="profileMsgBtn">💬 <span>Написать</span></button><button type="button" class="profileGiftBtn">🎁 <span>Подарок</span></button></div><div class="courtshipBox" id="courtshipBox"><div class="courtshipAvatar" id="courtshipAvatar"></div><div class="courtshipInfo"><div class="courtshipLine">Ухаживает <b id="courtshipName">Player 1</b></div><div class="courtshipMeta"><span>💛 <b id="courtshipHearts">26</b></span><small id="courtshipRank">3088 в рейтинге</small></div><button id="courtshipBtn" class="courtshipRole" type="button">Ухаживать</button></div></div></div></div></div><div class="settingsOverlay hidden" id="settingsOverlay"><button class="settingsBackdrop" id="settingsBackdrop" type="button" aria-label="Закрыть"></button><section class="settingsCard settingsClassic" role="dialog" aria-modal="true"><div class="settingsMenuView" id="settingsMenuView"><div class="settingsHead"><b>Настройки</b><button id="settingsClose" type="button">×</button></div><div class="settingsRows"><div class="settingsRow"><span class="settingsRowIcon">🔊</span><span>Звуки</span><button class="settingsSwitch" id="soundToggle" type="button" aria-label="Звуки"><i></i></button></div><div class="settingsRow"><span class="settingsRowIcon">🎵</span><span>Музыка</span><button class="settingsSwitch active" id="musicToggle" type="button" aria-label="Музыка"><i></i></button></div><button class="settingsRow settingsRowButton" id="inviteFriendsBtn" type="button"><span class="settingsRowIcon">🧑‍🤝‍🧑</span><span>Пригласить друзей</span></button><button class="settingsRow settingsRowButton" id="profileSettingsBtn" type="button"><span class="settingsRowIcon">🪪</span><span>Настройки профиля</span><b>›</b></button><button class="settingsRow settingsRowButton" id="languageSettingsBtn" type="button"><span class="settingsRowIcon">🌐</span><span id="settingsLanguageLabel">Язык</span><b>›</b></button><button class="settingsRow settingsRowButton danger" id="logoutBtn" type="button"><span class="settingsRowIcon">🚪</span><span>Выйти</span></button></div></div><div class="settingsLanguageView hidden" id="settingsLanguageView"><div class="settingsHead"><button class="settingsBack" id="settingsLanguageBack" type="button">‹</button><b id="languageViewTitle">Язык</b><button id="settingsLanguageClose" type="button">×</button></div><div class="languageOptions" id="languageOptions"><button type="button" data-app-lang="ky"><span>🇰🇬</span><b>Кыргызча</b><i>✓</i></button><button type="button" data-app-lang="ru"><span>🇷🇺</span><b>Русский</b><i>✓</i></button><button type="button" data-app-lang="uz"><span>🇺🇿</span><b>O‘zbekcha</b><i>✓</i></button><button type="button" data-app-lang="kk"><span>🇰🇿</span><b>Қазақша</b><i>✓</i></button><button type="button" data-app-lang="tr"><span>🇹🇷</span><b>Türkçe</b><i>✓</i></button><button type="button" data-app-lang="en"><span>🇬🇧</span><b>English</b><i>✓</i></button></div></div><div class="settingsProfileView hidden" id="settingsProfileView"><div class="settingsHead"><button class="settingsBack" id="settingsProfileBack" type="button">‹</button><b>Профиль</b><button id="settingsProfileClose" type="button">×</button></div><div class="profilePhotoEditor"><button class="profilePhotoMain" id="profilePhotoMain" type="button"><span>Главное фото</span></button><div class="profilePhotoGrid"><button class="profilePhotoExtra" data-photo-slot="1" type="button"><span>+ Фото</span></button><button class="profilePhotoExtra" data-photo-slot="2" type="button"><span>+ Фото</span></button><button class="profilePhotoExtra" data-photo-slot="3" type="button"><span>+ Фото</span></button></div></div><div class="profileFields"><label>Имя<input id="profileDisplayName" type="text" maxlength="24" placeholder="Ваше имя"></label><label class="compactField">Дата рождения<input id="profileBirthDate" type="date"></label><div class="profileGender compactGender"><span>Пол</span><div><button type="button" data-gender="male">Мужской</button><button type="button" data-gender="female">Женский</button></div></div></div><button class="settingsSave" id="profileSettingsSave" type="button">Сохранить профиль</button><input type="file" id="profilePhotoInput" accept="image/*" hidden></div></section></div><div class="rankingOverlay hidden" id="rankingOverlay"><button class="rankingBackdrop" id="rankingBackdrop" type="button" aria-label="Закрыть"></button><section class="rankingCard" role="dialog" aria-modal="true"><button class="rankingClose" id="rankingClose" type="button" aria-label="Закрыть">×</button><div class="rankingTabs" id="rankingTabs"><button class="active" type="button" data-rank-type="kiss" aria-label="Поцелуи">💋</button><button type="button" data-rank-type="music" aria-label="Музыка">🎵</button><button type="button" data-rank-type="heart" aria-label="Сердца">♥</button><button type="button" data-rank-type="influence" aria-label="Влияние">💕</button></div><div class="rankingHeader"><h3 id="rankingTitle">Самые зацелованные</h3><div class="rankingPeriod"><button id="rankingPeriodBtn" type="button"><span id="rankingPeriodLabel">за месяц</span><b>⌄</b></button><div class="rankingPeriodMenu hidden" id="rankingPeriodMenu"><button type="button" data-rank-period="all">за все время</button><button class="active" type="button" data-rank-period="month">за месяц</button><button type="button" data-rank-period="week">за неделю</button><button type="button" data-rank-period="day">за день</button></div></div></div><div class="rankingList" id="rankingList"></div><div class="rankingFootNote">Топ-10 лучших игроков</div><div class="rankingMe" id="rankingMe"></div></section></div><div class="youtubeLibrary hidden" id="youtubeLibrary"><button class="ytBackdrop" id="ytBackdrop" aria-label="Закрыть"></button><section class="ytPanel" role="dialog" aria-modal="true" aria-labelledby="ytLibraryTitle"><button class="ytClose" id="ytClose" aria-label="Закрыть">×</button><div class="ytTabs"><button class="ytTab active" data-yt-tab="popular" title="Популярное">🔥</button><button class="ytTab" data-yt-tab="favorites" title="Избранное">★</button><button class="ytTab" data-yt-tab="history" title="История">◷</button><button class="ytTab" data-yt-tab="search" title="Поиск">⌕</button></div><h3 id="ytLibraryTitle">Поставить видео из популярного</h3><div class="ytSearchRow hidden" id="ytSearchRow"><input id="ytSearchInput" autocomplete="off" placeholder="Поиск по каталогу"></div><div class="ytGrid" id="ytGrid"></div></section></div><input type="file" id="file" accept="video/mp4,video/webm,video/quicktime" hidden><input type="file" id="customBgFile" accept="image/*" hidden><div class="toast" id="toast"></div>`;
 
-// ── net (keep this) ────────────────────────────────────────────────────────
+const DEMO=[['Айдана, 27',47,'🌻',68],['Бекзат, 30',12,'🧁',40],['Алина, 25',44,'📺',37],['Тимур, 31',11,'🌼',64],['Айгерим, 28',45,'🧸',44,'https://www.youtube.com/watch?v=jNQXAC9IVRw'],['Нурбек, 29',13,'🥃',19],['Сабина, 26',49,'☕',7],['Арсен, 32',15,'💎',5],['Малика, 24',48,'💖',23],['Данияр, 33',14,'👑',11],['София, 29',43,'🌹',31]].map(([name,img,gift,badge,video])=>({name,photo:`https://i.pravatar.cc/300?img=${img}`,gift,badge,video}));
+const POS=[[14,14],[36,7],[59,7],[84,11],[11,40],[89,40],[11,64],[89,64],[24,89],[50,93],[76,89]];
+const FALLBACK_GIFTS=[
+  {"id":"new_20260921_nasaat_01","name":"кабаа ❤️","cost":499,"category":"luxury","asset":"effect://new-20260921-nasaat-01","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/c54585ef-c679-4ad7-9cb6-20353c0b08ef.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/2aafbcfe-7a7f-449f-9f62-f513fe39f460.mp4"},
+  {"id":"new_20260921_nasaat_02","name":"….сура","cost":499,"category":"luxury","asset":"effect://new-20260921-nasaat-02","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/7859b7c2-9116-462b-b802-be5c348d5915.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/87a6d08a-caaf-4b44-a804-950ee76811bf.mp4"},
+  {"id":"new_20260921_nasaat_03","name":"иш баштаганда …","cost":499,"category":"luxury","asset":"effect://new-20260921-nasaat-03","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/d266c310-bfca-4cdb-8155-75ba2febea05.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/6bf7a02f-eced-4e97-9295-bf12162fd111.mp4"},
+  {"id":"new_20260921_nasaat_04","name":"кудайды зикир кылып эстей турган болсо….","cost":499,"category":"luxury","asset":"effect://new-20260921-nasaat-04","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/cdbb2913-8a63-4a03-b17e-ead798a545fe.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/c0717c98-00f2-496e-965a-fa37b3c096fe.mp4"},
+  {"id":"new_20260921_nasaat_05","name":"кайсы бир адамдын башына кыйынчылык….","cost":499,"category":"luxury","asset":"effect://new-20260921-nasaat-05","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/b68c761e-fed8-4c04-9cae-278e7830dade.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/cc9a261f-5ec8-4060-93cd-be2ada72f3f6.mp4"},
+  {"id":"new_20260921_nasaat_06","name":"ар бир жамандын ….","cost":499,"category":"luxury","asset":"effect://new-20260921-nasaat-06","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/d2a0697e-ab7b-4444-84b7-247852833b8f.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/78638424-5123-4e63-ad25-b037c97a2410.mp4"},
+  {"id":"new_20260921_nasaat_07","name":"туугандар намаз окугула ….","cost":499,"category":"luxury","asset":"effect://new-20260921-nasaat-07","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/4ca4fe29-5cdf-4c2e-b4e4-683895ffad82.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/d767015d-3949-4078-a4de-502563a65f67.mp4"},
+  {"id":"new_20260921_nasaat_08","name":"ийгилике жетүүнүн сыры….","cost":499,"category":"luxury","asset":"effect://new-20260921-nasaat-08","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/858482f4-9661-495a-9ea1-ea4a37714fe6.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/806ddd43-1ec7-493f-84ab-4ede7ebbf10b.mp4"},
+  {"id":"new_20260921_nasaat_09","name":"биз шүгүр кылгандын….","cost":499,"category":"luxury","asset":"effect://new-20260921-nasaat-09","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/ee00a3c4-a590-45c2-9a12-0648a52fde3f.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/e22b140b-52e1-4a59-82ba-ba08f1a47d3f.mp4"},
+  {"id":"new_20260921_nasaat_10","name":"садака берүү….","cost":499,"category":"luxury","asset":"effect://new-20260921-nasaat-10","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/64283a91-9fe5-48ee-94d8-4bff6290d9d2.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/f618611b-3d2e-4e33-8504-51ee851f0f2a.mp4"},
+  {"id":"new_20260921_nasaat_12","name":"фараодун кызынын чачын ….","cost":499,"category":"luxury","asset":"effect://new-20260921-nasaat-12","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/7796f1d9-f772-4caf-8f30-fb84e8c22e2e.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/868ed574-c832-4b82-93ec-d9640ccb70a5.mp4"},
+  {"id":"new_20260921_nasaat_13","name":"АЛЛА ТААЛА менен ….","cost":499,"category":"luxury","asset":"effect://new-20260921-nasaat-13","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/c92a903c-2b0e-4192-a3d9-3928639a87bc.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/b5ff32bc-7c17-47d9-b373-a22a847fcf69.mp4"},
+  {"id":"new_20260921_nasaat_14","name":"куранда АЛЛА ТААЛА айтат ….","cost":499,"category":"luxury","asset":"effect://new-20260921-nasaat-14","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/afca1640-4a81-44ba-b86b-7fd17a40598b.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/975b3b01-23ae-4627-82f4-53cde4abb93c.mp4"},
+  {"id":"new_20260921_nasaat_15","name":"мечити мусулман ….","cost":499,"category":"luxury","asset":"effect://new-20260921-nasaat-15","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/141b29e6-ac56-4024-91a8-2e612fde10e3.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/859f0cf9-bd0e-4754-846f-6b9c99533b16.mp4"},
+  {"id":"new_20260921_nasaat_16","name":"АЛЛАГА гана сыйынгыла ….","cost":499,"category":"luxury","asset":"effect://new-20260921-nasaat-16","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/f5b68234-5730-4eb5-a5e8-cc4a429eda94.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/a85e75c2-fc71-4cdf-a427-76e43744dc56.mp4"},
+  {"id":"new_20260921_nasaat_17","name":"кыздарга дагы балдарга дагы осуят ….","cost":499,"category":"luxury","asset":"effect://new-20260921-nasaat-17","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/5bf5fd01-d87a-437e-9d72-182f1017afd4.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/36a7bbd4-7400-4062-9121-7732b3068186.mp4"},
+  {"id":"new_20260921_nasaat_18","name":"7 түрлүү киши ….","cost":499,"category":"luxury","asset":"effect://new-20260921-nasaat-18","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/3043142c-7524-4e56-8d0f-a76c2e1cb7db.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/5ede6db4-8c35-4f46-a2a9-c3f6ccaf1e9d.mp4"},
+  {"id":"new_20260921_nasaat_19","name":"жолук ….","cost":499,"category":"luxury","asset":"effect://new-20260921-nasaat-19","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/16fa1f6b-df9d-4ca0-a4dd-40cf5f454282.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/e7b91fb6-1171-42e6-9a72-cb3989edfc9c.mp4"},
+  {"id":"new_20260921_nasaat_20","name":"издешкен достор….","cost":499,"category":"luxury","asset":"effect://new-20260921-nasaat-20","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/4da2f58f-a06f-46e4-a323-905ca0d11d99.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/6f8c86ac-40d2-4292-ac4d-e2eb71ede3c7.mp4"},
+  {"id":"new_20260921_nasaat_21","name":"кабырдан да коркунучтуу….","cost":499,"category":"luxury","asset":"effect://new-20260921-nasaat-21","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/08ba4fde-e460-4fb3-bb7d-593cf358d060.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/3abd4052-154a-459d-b89c-5fd3cc8081e4.mp4"},
 
-/** Room from ?room=, so two tabs can share a game. Same name = same room. */
-const room = new URLSearchParams(location.search).get("room") || "main";
+  {"id":"new_20260921_1","name":"Без названия","cost":499,"category":"style","asset":"effect://new-20260921-1","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/b1771b4a-7bb7-4250-a345-e28eb1c24280.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/ee7ed9f7-595d-410d-ae87-71cfe8c8d190.mp4"},
+  {"id":"new_20260921_2","name":"Без названия","cost":499,"category":"style","asset":"effect://new-20260921-2","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/2fc5dd78-fe66-40db-b891-adc173960186.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/c727b060-3319-44ad-a04c-af7b5e81574d.mp4"},
+  {"id":"new_20260921_3","name":"Без названия","cost":499,"category":"style","asset":"effect://new-20260921-3","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/f398f609-18c3-417a-a047-2a5fd47ddc56.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/d00cfc8f-2a28-447a-a95f-501bec8801a1.mp4"},
+  {"id":"new_20260921_4","name":"Antarctica","cost":499,"category":"style","asset":"effect://new-20260921-4","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/7f009d09-184a-43b5-92a2-324eada1dd10.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/c02339d2-bee1-48c3-82e3-7186cabd089d.mp4"},
+  {"id":"new_20260921_5","name":"Ыссык-Көл","cost":499,"category":"style","asset":"effect://new-20260921-5","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/344f8c97-d665-4f39-bbdc-0d3580852ae7.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/89d03010-e4f8-4143-b494-9047a81bce29.mp4"},
+  {"id":"new_20260921_6","name":"С Днём Независимости Кыргызстан","cost":499,"category":"style","asset":"effect://new-20260921-6","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/6066cf87-0b2e-4abc-ba32-e7a1620c36fa.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/6c8ef7dd-e38a-412e-ac83-af81be3471af.mp4"},
+  {"id":"new_20260921_7","name":"World Nomad Games 2026 — Opening Ceremony","cost":499,"category":"style","asset":"effect://new-20260921-7","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/a9f341c6-143c-488d-99cb-4fd2d1630d0c.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/d7ce7307-9ac7-44dd-8dbb-9575785f5116.mp4"},
+  {"id":"new_20260921_8","name":"Kyrchyn Ethno-Village","cost":499,"category":"style","asset":"effect://new-20260921-8","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/95451fe7-f1c0-4c8d-8496-fbf4fe5f4901.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/85b9523b-5f68-45ea-a930-c12d5978fb56.mp4"},
+  {"id":"new_20260921_9","name":"Без названия","cost":499,"category":"style","asset":"effect://new-20260921-9","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/85e3aff6-fe05-4dcf-8cc6-d54f178efbfb.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/b5f0208f-a4cd-45a8-84aa-740d67345d53.mp4"},
+  {"id":"new_20260921_10","name":"Кел-Суу, Кыргызстан","cost":499,"category":"style","asset":"effect://new-20260921-10","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/a462030f-b8c0-424a-8500-3aa67c1d50df.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/0c20ef92-2074-4c9f-8f3f-66c3cae09869.mp4"},
+  {"id":"new_20260921_11","name":"Mongolia","cost":499,"category":"style","asset":"effect://new-20260921-11","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/b4b8c68f-0a13-47db-a969-5ce90ee686f8.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/0a787e26-661d-459b-ad17-46848d07a63c.mp4"},
+  {"id":"new_20260921_12","name":"Vanuatu","cost":499,"category":"style","asset":"effect://new-20260921-12","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/cca11555-a60a-4f5e-869b-a8605efb33a5.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/acedaab6-b3e3-4970-b034-543b3353365d.mp4"},
+  {"id":"new_20260921_13","name":"You, me & Hawaii?","cost":499,"category":"style","asset":"effect://new-20260921-13","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/b80a96d9-0864-4215-a613-6d3c0e75a81a.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/70191624-b6f5-4ea5-8f56-4463c40e021f.mp4"},
+  {"id":"new_20260921_14","name":"Без названия","cost":499,"category":"style","asset":"effect://new-20260921-14","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/6916d59b-e1a9-4ab6-9a0e-b2b07babb8bd.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/864aa27e-660b-43f0-a276-fb58d3190a81.mp4"},
+  {"id":"new_20260921_15","name":"Без названия","cost":499,"category":"style","asset":"effect://new-20260921-15","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/02b4b0d6-07c3-4788-85ba-3398002acefb.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/9e314fb4-89b5-4241-b7f1-7538bc14f610.mp4"},
+  {"id":"new_20260921_16","name":"You, me, Italy?","cost":499,"category":"style","asset":"effect://new-20260921-16","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/e1731fe2-49b3-43ea-b52a-6ca5fce74837.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/4ab84ffd-5408-4b69-a447-980a85695813.mp4"},
+  {"id":"new_20260921_17","name":"Без названия","cost":499,"category":"style","asset":"effect://new-20260921-17","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/0ec4b0b8-a54f-436c-8338-b34cce19d31b.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/ce75a045-86d5-47b2-ba9a-10950cd7078f.mp4"},
+  {"id":"new_20260921_18","name":"me & you in…","cost":499,"category":"style","asset":"effect://new-20260921-18","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/6d34cca2-dceb-4498-bb03-74fe51f6c0f1.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/1a87bd8d-7abe-4310-87a1-cc7f5fb1afed.mp4"},
+  {"id":"new_20260921_19","name":"Russia","cost":499,"category":"style","asset":"effect://new-20260921-19","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/8df1a044-c73b-4148-8ce1-c13677c38ff7.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/cdaf002a-54f8-43be-a583-823de6322ff6.mp4"},
+  {"id":"new_20260921_20","name":"Аль-Ихлас","cost":499,"category":"luxury","asset":"effect://new-20260921-20","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/41c92238-0e60-4a56-8c58-7ca4e8b3753a.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/d007a8ba-890e-4346-b121-6ff7be90d24e.mp4"},
+  {"id":"new_20260921_21","name":"Жашың 40 ка келсе","cost":499,"category":"luxury","asset":"effect://new-20260921-21","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/ed065555-8b4e-4d3e-b9ae-00253add9224.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/183eff51-031d-47e0-bb5b-3c9cf500f006.mp4"},
+  {"id":"new_20260921_22","name":"Ясин","cost":499,"category":"luxury","asset":"effect://new-20260921-22","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/56a53687-5600-480f-a829-64ac7c9818ce.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/362a4ccc-11da-4271-a438-d26c7a91bf3e.mp4"},
+  {"id":"new_20260921_23","name":"Бүгүн, Мухаммад (С.А.В.) үчүн эмне кылдык?","cost":499,"category":"luxury","asset":"effect://new-20260921-23","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/91e8fd84-3fd1-4e21-a69f-25131d0ee20c.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/5c83d497-d414-4f45-b5b0-086937e9c6ad.mp4"},
+  {"id":"new_20260921_24","name":"Куран","cost":499,"category":"luxury","asset":"effect://new-20260921-24","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/1d4144dd-3fe3-45f9-8131-f821549036dd.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/af4bb363-c61c-45d1-bd79-8b66735f5f23.mp4"},
+  {"id":"new_20260921_25","name":"Ар бир кылган пенде…","cost":499,"category":"luxury","asset":"effect://new-20260921-25","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/710b49cb-1c9a-4211-95ec-fe7efab8aa3b.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/6738bbd3-2dfd-4104-86e8-c579eb906f6e.mp4"},
+  {"id":"new_20260921_26","name":"Аль-Каусар","cost":499,"category":"luxury","asset":"effect://new-20260921-26","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/d20184c3-ecd4-4f8f-9586-3a8f309dab32.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/327e0d16-8f19-40a9-93ef-f92cb15290e7.mp4"},
+  {"id":"new_20260921_27","name":"Без названия","cost":499,"category":"luxury","asset":"effect://new-20260921-27","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/cba28ed1-bf22-408d-b48a-40bebc75389d.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/e329cddf-c222-45f6-823d-8a80209c5ec1.mp4"},
+  {"id":"new_20260921_28","name":"Дүнүйө…","cost":499,"category":"luxury","asset":"effect://new-20260921-28","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/c07a3a47-36ed-49d4-b836-3c2b1a742dba.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/6f3a8f50-6b54-47c8-8d9e-92c27866bc7b.mp4"},
+  {"id":"new_20260921_29","name":"Al-Baqarah","cost":499,"category":"luxury","asset":"effect://new-20260921-29","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/3df1deef-dfe0-46f5-a708-44199ee701de.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/02a56992-16a8-4708-b5c9-2912a70d8b04.mp4"},
+  {"id":"new_20260921_30","name":"Жүрөк титиреткен сөздөр","cost":499,"category":"luxury","asset":"effect://new-20260921-30","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/46b39d14-f5f9-4294-9b23-6c676ee342eb.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/4c68248a-1fb2-4a67-ac82-2c43037d140c.mp4"},
+  {"id":"new_20260921_31","name":"Кааба","cost":499,"category":"luxury","asset":"effect://new-20260921-31","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/cd4dca55-e413-45b6-88ba-98860d1b8bce.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/95bf82ee-7125-4177-b58f-87b75bef1cfa.mp4"},
+  {"id":"new_20260921_32","name":"Намазда кулак каккан адеби","cost":499,"category":"luxury","asset":"effect://new-20260921-32","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/e4a8b08a-82f8-4a25-a926-bb0cfc7307fb.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/9fb1ddad-949a-46ea-9063-c22145792a6a.mp4"},
+  {"id":"new_20260921_33","name":"Кааба","cost":499,"category":"luxury","asset":"effect://new-20260921-33","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/c18a0bc4-bc3f-4ea7-b4bb-3efa6d46bad6.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/61f8eb04-6324-4a30-b139-ccb4ad4b2430.mp4"},
+  {"id":"new_20260921_34","name":"Сура…","cost":499,"category":"luxury","asset":"effect://new-20260921-34","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/fcf0312f-0d20-4f77-a803-c209a9a3b6eb.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/6d78fce4-7d0e-4daa-9dda-278c463529ab.mp4"},
+  {"id":"new_20260921_35","name":"Без названия","cost":499,"category":"luxury","asset":"effect://new-20260921-35","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/ffe01224-cbbd-4c7c-9f2a-26e24112a221.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/f83df935-98fb-4c09-aa30-21cbbab85bc8.mp4"},
+  {"id":"new_20260921_36","name":"Без названия","cost":499,"category":"luxury","asset":"effect://new-20260921-36","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/dcd67a63-4fdb-44c4-958b-f28519b21cbf.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/2422bc07-7264-468c-b3c4-54e637f90b8e.mp4"},
+  {"id":"new_20260921_37","name":"Alhamdulillah It’s Friday","cost":499,"category":"luxury","asset":"effect://new-20260921-37","emoji":"🌸✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/392e9d79-270f-42c4-bc30-a1167ffb44f2.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/b695e0db-6865-4bb4-b7d6-857267f1df7a.mp4"},
+  {id:"suzana",name:"Сюзана",cost:999,category:"tiktok",asset:"effect://suzana",emoji:"💐💕",epic:true,effect:"video3d",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/80d5109b-9e37-444e-9540-85c519454124.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/97b7da16-a37d-4021-86b5-bcff37d6717a.mp4"},
+  {id:"seni_suyom",name:"Сени сыйлайм",cost:199,category:"tiktok",asset:"effect://seni-suyom",emoji:"❤️🎵",epic:true,effect:"video3d",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/41b7857b-a43d-462c-9ddc-415f2307a9bc.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/4dfd129e-a446-4f68-a555-2ed3516ce123.mp4"},
+  {id:"baur_vorobey",name:"Баур Воробей",cost:249,category:"tiktok",asset:"effect://baur-vorobey",emoji:"🏴‍☠️🎵",epic:true,effect:"video3d",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/33ac0615-55ba-4483-81ee-7f3c5caca185.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/2493d90b-5038-4531-811e-082cee435cbe.mp4"},
+  {id:"sovet",name:"Совет",cost:299,category:"tiktok",asset:"effect://sovet",emoji:"🧠✨",epic:true,effect:"video3d",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/f43e512f-fa29-42ca-828f-e4e829fe83c5.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/867cea15-0cb2-4ff8-b609-8c889219aa95.mp4"},
+  {id:"macho",name:"Мачо",cost:349,category:"tiktok",asset:"effect://macho",emoji:"😎🔥",epic:true,effect:"video3d",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/a7e9a254-d4f6-4c5e-b85e-9acf17cb9c58.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/f455d83b-c3d1-42d8-8430-0bacfd1b525d.mp4"},
+  {id:"18_jash",name:"18 жаш",cost:399,category:"tiktok",asset:"effect://18-jash",emoji:"1️⃣8️⃣🎉",epic:true,effect:"video3d",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/32c41b34-bad8-4843-98d7-fb6a2ee93028.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/8de11be4-a0ac-4849-848d-20ad42a84d07.mp4"},
+  {id:"ot_boldum",name:"Көңүл көтөрүлдү ✨",cost:399,category:"tiktok",asset:"effect://ot-boldum",emoji:"✨🎵",epic:true,effect:"video3d",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/a3144c35-3f10-414c-a21e-8f7062e66543.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/bea2dba6-02de-4034-8da9-f02e11249a98.mp4"},
+  {id:"confucius",name:"Конфуций 💕",cost:449,category:"tiktok",asset:"effect://confucius",emoji:"📜✨",epic:true,effect:"video3d",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/89328ad4-7cfd-4e69-9a44-d56845ce5cd5.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/7d46f56d-cc30-4d46-84fb-919dda2e8f06.mp4"},
+  {id:"oh_janym_iy",name:"Ох кандай сонун ✨",cost:499,category:"tiktok",asset:"effect://oh-janym-iy",emoji:"✨🎵",epic:true,effect:"video3d",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/9b158d8c-e029-4d68-a751-1d578cf1332e.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/7a3cd958-9354-495c-9610-af0ff8b1c5f6.mp4"},
+  {id:"ai_iiy",name:"Ай Иий ✨",cost:549,category:"tiktok",asset:"effect://ai-iiy",emoji:"✨🌌",epic:true,effect:"video3d",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/d00facb0-56c6-476a-b51d-d41098b75623.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/1f479a3e-7f9e-471c-b3bc-d52168bcad8c.mp4"},
+  {"id":"kolunan_emne_kelet","name":"колунан эмне келет","cost":599,"category":"tiktok","asset":"effect://kolunan-emne-kelet","emoji":"🌶️🌶️🌶️","epic":true,"effect":"video3d","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/db7afe74-289f-48c8-840f-6cae3dd25038.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/173387cd-2bfa-437b-9e43-66c98d33f082.mp4"},
+  {id:"not_my_taste",name:"Не мой стиль 🤢",cost:599,category:"tiktok",asset:"effect://not-my-taste",emoji:"🤢💦",epic:true,effect:"video3d",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/f95214ae-e4eb-44fa-87e6-5f59c113b190.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/e2208154-d315-46b5-84a3-033bfe3b9b32.mp4"},
+  {id:"golodnyak",name:"Голодняк 😋",cost:649,category:"tiktok",asset:"effect://golodnyak",emoji:"😋✨",epic:true,effect:"video3d",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/c335f41a-423d-4bf5-b995-9fe0b8cf15d8.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/bcf67030-e595-4de6-96e1-b25060ec6705.mp4"},
+  {id:"oshtun_trassasy",name:"Оштун трассасы",cost:799,category:"tiktok",asset:"effect://oshtun-trassasy",emoji:"🚗✨",epic:true,effect:"video3d",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/9946ff6a-5d56-48d5-8e0c-6e29eb6f725d.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/0cee3f95-be9d-4b8c-8030-ffce88ee9943.mp4"},
+  {id:"meni_karabachy",name:"мени карабачы",cost:699,category:"tiktok",asset:"effect://meni-karabachy",emoji:"👀✨",epic:true,effect:"video3d",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/6d2937ff-e3c8-4c67-a5b1-f633f65edfc5.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/318bf7eb-b9fe-42f1-bc21-dcc750ea6b8f.mp4"},
+  {id:"ekrandan_alyzyraak_oturchu",name:"экрандан алызыраак отурчу",cost:699,category:"tiktok",asset:"effect://ekrandan-alyzyraak-oturchu",emoji:"📱✨",epic:true,effect:"video3d",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/c93de2e3-be2c-40ca-9598-ee26422c64b6.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/7b2f6331-fc9f-44f7-b38c-7943cf2c0b1d.mp4"},
+  {id:"prank_friend_a",name:"тентек досун",cost:749,category:"tiktok",asset:"effect://prank-friend-a",emoji:"😏✨",epic:true,effect:"video3d",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/52cba7b9-cb6c-4715-b91b-72196715050c.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/adb82c6f-13b7-4dc4-a188-2b0958af4a34.mp4"},
+  {id:"fun_friend_fire",name:"тамаша досуң",cost:749,category:"tiktok",asset:"effect://fun-friend-fire",emoji:"🔥😤",epic:true,effect:"video3d",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/76406f94-bfd5-42da-a173-9d4a27ec7a41.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/df5cabea-4a9d-490f-b4a5-7ba092a20ef0.mp4"},
+  {id:"bratishkan_turaby",name:"братишкан турабы ?",cost:749,category:"tiktok",asset:"effect://bratishkan-turaby",emoji:"✨📹",epic:true,effect:"video3d",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/e1f88dea-7fd6-4b3d-a44a-2cab557edeef.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/7cf40dc1-36fa-4953-bd32-17c869175ba3.mp4"},
+  {id:"tishi_jok_dosun",name:"күлкүлүү досуң",cost:749,category:"tiktok",asset:"effect://tishi-jok-dosun",emoji:"✨🎬",epic:true,effect:"video3d",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/c67c9a52-03ca-4238-b343-428ebb22e4a3.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/50e19d30-2d14-4b9b-8395-48be1f844cb2.mp4"},
+  {id:"iterisheli_emi",name:"итеришели эми",cost:799,category:"tiktok",asset:"effect://iterisheli-emi",emoji:"🕸️✨",epic:true,effect:"video3d",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/c9f0e80a-bbb1-4771-8a40-4deb6d125ac4.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/ebcc397f-e253-4a8e-8216-b2d7a97aca14.mp4"},
+  {id:"pokazhite_pozhaluysta",name:"покажите пожалуйста",cost:749,category:"tiktok",asset:"effect://pokazhite-pozhaluysta",emoji:"🦇✨",epic:true,effect:"video3d",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/afc67d05-04a9-482a-bbc4-d86f48a8fe2e.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/3c51f6b7-a2c3-472b-8ad4-3abffe21f2e7.mp4"},
+  {id:"odin_polka_pozhaluysta",name:"один полка пожалуйста",cost:749,category:"tiktok",asset:"effect://odin-polka-pozhaluysta",emoji:"✨",epic:true,effect:"video3d",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/d8ab8d1e-bc7a-4716-a1d4-8cd9a6c9d5a0.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/6bcbe6a9-0387-48b6-843d-1899ca5f5aae.mp4"},
+  {id:"kysteke_dosuna",name:"кыстеке досуна",cost:749,category:"tiktok",asset:"effect://kysteke-dosuna",emoji:"🖤✨",epic:true,effect:"video3d",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/771f355d-56b2-4ca0-ae69-a6707abe55b3.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/9a7ca56a-888d-4c4c-b401-19be21f07f21.mp4"},
+  {id:"sen_kanchanchy_jylkysyn",name:"Сен канчанчы жылкысың?",cost:749,category:"tiktok",asset:"effect://sen-kanchanchy-jylkysyn",emoji:"🐴✨",epic:true,effect:"video3d",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/515273a2-d695-4e5c-8410-4a5dc08fe6bf.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/44681f5d-c1ae-4c6c-9079-d3fa1bf31502.mp4"},
+  {id:"shlyapa_yrgytchy",name:"шляпа ыргытчы",cost:799,category:"tiktok",asset:"effect://shlyapa-yrgytchy",emoji:"🎩✨",epic:true,effect:"video3d",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/6d6aed88-0fcd-413e-9692-6f1adf48f9c3.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/fde6a945-ac4a-45ba-bd8f-840ae0e80e69.mp4"},
+  {id:"nastroeniya_jok_kezde",name:"настроения жок кезде",cost:849,category:"tiktok",asset:"effect://nastroeniya-jok-kezde",emoji:"🌼✨",epic:true,effect:"video3d",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/d6b9b35d-ea2e-434e-a62d-0c43f4137c13.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/5a66dbdf-6afe-4c08-988b-c630a445b526.mp4"},
+  {id:"soguunu_toktotkula",name:"Сөгүүнү токтоткула 🙏",cost:849,category:"tiktok",asset:"effect://soguunu-toktotkula",emoji:"🙏✨",epic:true,effect:"video3d",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/f6802998-6915-40f2-8fd4-3b9bf0adc8c2.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/623c0b6b-dc8a-4096-a667-c71b0ffb7cef.mp4"},
+  {id:"chykylа_kanshylabai",name:"чыкыла каншылабай",cost:899,category:"tiktok",asset:"effect://chykylа-kanshylabai",emoji:"❄️✨",epic:true,effect:"video3d",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/02ad73e0-60a8-4273-8510-e1edee3a80e1.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/3ac62f3a-afb3-42bf-9d1c-c09c99e6bc30.mp4"},
+  {id:"prank_friend_b",name:"тамаша досун",cost:899,category:"tiktok",asset:"effect://prank-friend-b",emoji:"🎬✨",epic:true,effect:"video3d",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/f0c0dd3c-f5ed-4ac8-abe2-fd43826e44fa.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/08c4edbc-bb71-48d8-856a-5370aa524d51.mp4"},
+  {id:"maimyl_dosken",name:"маймыл доскен",cost:949,category:"tiktok",asset:"effect://maimyl-dosken",emoji:"🐒🍌",epic:true,effect:"video3d",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/a4686cff-1a7a-4960-a376-ad9f733ed851.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/da101e24-98e7-4034-b694-b5aec7e0ee06.mp4"},
+  {id:"kandaisyn_doske_joop",name:"кандайсын доске дегенге жооб",cost:999,category:"tiktok",asset:"effect://kandaisyn-doske-joop",emoji:"🫏🚗",epic:true,effect:"video3d",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/6fcd3e01-7b3c-4107-82d2-c329b337cd73.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/d8404128-d7c8-4d1e-84ff-c047cfd9fd0c.mp4"},
+  {id:"meni_jebechi",name:"меникин жебечи",cost:999,category:"tiktok",asset:"effect://meni-jebechi",emoji:"✨💡",epic:true,effect:"video3d",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/52db402c-2345-4d2e-8452-f3b3daa154f9.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/4e740108-9bf2-4cd0-a9f1-3096704b9d99.mp4"},
 
-/**
- * A stable per-browser identity, so a reload rejoins the same seat instead of
- * consuming a new one. Not a security boundary — the server treats playerId as a
- * claim, which is fine for casual games.
- */
-function playerId() {
-  const key = "hf:game:playerId";
-  let id = localStorage.getItem(key);
-  if (!id) {
-    id = Math.random().toString(36).slice(2, 10);
-    localStorage.setItem(key, id);
-  }
-  return id;
+  {id:"batch_16_queen",name:"Ты лучшая королева… 👸",cost:899,category:"friendly",asset:"effect://batch16",emoji:"👸✨",epic:true,effect:"video3d",postEffect:"queen",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/008bc7f2-a625-4a2d-bc38-bec0c64d7111.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/26cd5794-cfd0-40af-be4f-3cbdbecabbf1.mp4"},
+  {id:"batch_17_bul_guldor",name:"Бул гулдор сизге …💕",cost:749,category:"friendly",asset:"effect://batch17",emoji:"💐💕",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/77ac63ba-5164-4220-bc30-e010adf411c7.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/d00f34aa-db3f-4415-8bc9-492cd27de75f.mp4"},
+  {id:"batch_18_hearts",name:"❤️❤️❤️",cost:799,category:"friendly",asset:"effect://batch18",emoji:"❤️🎆",epic:true,effect:"video3d",postEffect:"heart_fireworks",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/72a60bb3-e0ed-4283-bca4-58d824b2b723.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/1cb4f29e-ec8f-463a-83e6-53c87b0185f1.mp4"},
+  {id:"batch_19_proposal",name:"💍💕 Колунду сурайын кандай дейсин",cost:999,category:"friendly",asset:"effect://batch19",emoji:"💍💕",epic:true,effect:"video3d",postEffect:"proposal",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/611ef8f5-1af6-4886-b7d1-de4bc9423866.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/f4f4a1a9-1975-406b-a27d-31439f843696.mp4"},
+  {id:"batch_20_sagyn",name:"Сагын ❤️",cost:699,category:"fun",asset:"effect://batch20",emoji:"❤️✨",epic:true,effect:"video3d",postEffect:"heart_fireworks",postLabel:"Сагын ❤️",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/b072ba00-f82d-42f9-9d93-8ac12e7410b8.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/1522c1f6-0e0f-4a40-80d4-6bccbe77f331.mp4"},
+  {id:"batch_21_senorito",name:"Сениорито 💕",cost:849,category:"friendly",asset:"effect://batch21",emoji:"🐱❤️",epic:true,effect:"video3d",postEffect:"cat_hero_love",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/cbdc5dbe-1c37-403e-9c40-3ee693026ff4.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/cf273e39-e252-4133-9c96-b3287efa72b8.mp4"},
+  {id:"batch_22_suluuluk",name:"Сулуулук бетте эмес журокто ☺️",cost:699,category:"friendly",asset:"effect://batch22",emoji:"❤️✨",epic:true,effect:"video3d",postEffect:"love",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/6d52be3f-0651-4208-98a3-ca3806380aa5.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/d761b0ce-3db9-4402-b312-399237bc382f.mp4"},
+  {id:"batch_23_pai_pai",name:"Пай-пай ❤️",cost:749,category:"friendly",asset:"effect://batch23",emoji:"愛❤️",epic:true,effect:"video3d",postEffect:"chinese_love",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/08100de8-747c-4abf-87cd-1972c083883c.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/9c304314-6d35-4e39-9a00-aab555249cb6.mp4"},
+  {id:"batch_24_budu_lubit",name:"Я буду любит тебя 😭💕",cost:799,category:"friendly",asset:"effect://batch24",emoji:"😭💕",epic:true,effect:"video3d",postEffect:"heart_fireworks",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/6695968f-df8f-43ab-a8d6-59cdc1bf586c.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/6035ebef-679a-4cd6-aa40-44ce462ea824.mp4"},
+  {id:"batch_25_jashoo",name:"Жашоо керемет 😀",cost:749,category:"fun",asset:"effect://batch25",emoji:"🫏❤️",epic:true,effect:"video3d",postEffect:"donkey_love",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/dfe9c648-4fc3-41d4-a692-84e6806ae2e8.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/b75f8bae-c68a-4ad8-9263-99a80727f6e3.mp4"},
+  {id:"batch_26_beri_kel",name:"Бери кел 😀",cost:699,category:"fun",asset:"effect://batch26",emoji:"🖕❤️",epic:true,effect:"video3d",postEffect:"cheeky_love",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/172202d2-9573-46c3-a241-8693b3cfc5f2.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/33a61f2c-fb46-48df-a090-55ef8a195ec6.mp4"},
+  {id:"batch_27_ubakyt",name:"Убакыт ⏰",cost:699,category:"friendly",asset:"effect://batch27",emoji:"⏰✨",epic:true,effect:"video3d",postEffect:"time",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/033bfba0-61d6-4601-94d7-a4d5ac89784c.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/aacc24ae-5289-4b70-88e4-aa14c7fdb0da.mp4"},
+  {id:"batch_28_kyrgyz_jigitter",name:"Кыргыз жигитер ❤️❤️😋",cost:749,category:"friendly",asset:"effect://batch28",emoji:"😉💕",epic:true,effect:"video3d",postEffect:"wink",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/21133bfd-6bc5-4c2c-b14a-8d60200253d9.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/a4595ce0-1d9a-4915-8cab-3ff1c7602104.mp4"},
+  {id:"batch_29_rogratka",name:"Бери кел энен 😂",cost:799,category:"fun",asset:"effect://batch29",emoji:"🪃💥",epic:true,effect:"video3d",postEffect:"slingshot",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/2c61ef33-a047-41fb-95f7-d42647ddcb75.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/1e71e2a2-83ba-48e5-9b3a-87a1627aaf89.mp4"},
+  {id:"batch_30_japan_love",name:"Для любви нет слова невозможно ..",cost:899,category:"friendly",asset:"effect://batch30",emoji:"🌸愛",epic:true,effect:"video3d",postEffect:"sakura_love",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/3ac1fcf1-2e49-4dbc-9549-ac4bc3074db0.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/ab2e5829-673f-425c-85b3-f2ee32534840.mp4"},
+  {id:"batch_31_molmolum",name:"Мөлмөлүм …💕",cost:749,category:"friendly",asset:"effect://batch31",emoji:"😉💕",epic:true,effect:"video3d",postEffect:"wink",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/d909580d-9ca4-4140-9334-bf0630a12b0e.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/39a6b90b-2130-41f0-8ef0-0db8b1c039f5.mp4"},
+  {id:"batch_32_men_uchun_sen",name:"Мен учун сен …💟",cost:749,category:"friendly",asset:"effect://batch32",emoji:"💟✨",epic:true,effect:"video3d",postEffect:"big_heart",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/949869b8-0a9e-4425-9dcc-3fe2db0b1c9a.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/841626b9-3fa8-4bdc-85d8-b46544b0ac27.mp4"},
+  {id:"batch_33_jungle",name:"Джунгли лау …",cost:849,category:"fun",asset:"effect://batch33",emoji:"🌿🐒",epic:true,effect:"video3d",postEffect:"jungle",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/3dd5fc90-476b-4304-922b-f40a9dec26af.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/e605c062-ab46-492c-aef9-c404c7e7b1eb.mp4"},
+  {id:"batch_34_business_woman",name:"Жыныштык катнаш …",cost:899,category:"fun",asset:"effect://batch34",emoji:"💼✨",epic:true,effect:"video3d",postEffect:"business",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/b13df28d-3c91-4e18-b827-3530e247a039.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/89ca2f25-cee7-4118-9ee4-871170eea361.mp4"},
+  {id:"batch_35_chicks",name:"Жожолор каяктасынар 🐥 …",cost:799,category:"friendly",asset:"effect://batch35",emoji:"🐥🐥",epic:true,effect:"video3d",postEffect:"chicks",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/91a2fe37-0379-43a4-b7c7-19f53284db00.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/fc7f6e78-c76e-4ae4-b768-4ae912333e19.mp4"},
+  {id:"batch_36_titanic",name:"Абайлагыла 😂",cost:999,category:"fun",asset:"effect://batch36",emoji:"🚢🌊",epic:true,effect:"video3d",postEffect:"titanic",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/07f1851b-ecd5-42a1-a1c7-525040489f64.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/3b547d31-eb07-432b-94d1-1d9c075a5541.mp4"},
+  {id:"batch_37_bul_saga",name:"Бул сага ❤️",cost:799,category:"friendly",asset:"effect://batch37",emoji:"🌹❤️",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/9ab47185-ea0a-4ee6-8c44-651f1b974c90.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/5d2cb08d-39d5-49b0-ab78-c98efab981db.mp4"},
+  {id:"batch_38_gulum",name:"Гулум 💐…",cost:799,category:"friendly",asset:"effect://batch38",emoji:"💐🤍",epic:true,effect:"video3d",postEffect:"flowers_white",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/493e6e98-f49e-462d-867d-4684e92e2b9a.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/81e250b5-5b6d-4a04-93af-465fba12b59f.mp4"},
+  {id:"batch_39_chickens",name:"Черный касса …",cost:1099,category:"epic",asset:"effect://batch39",emoji:"🐔🐔",epic:true,effect:"video3d",postEffect:"chickens",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/90c975f1-7691-49d4-804e-f6215ea1aec9.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/7417a601-51d7-4ae4-a067-b39bf391d89c.mp4"},
+  {id:"batch_40_fruits",name:"Мени чачыман жулуп …",cost:1099,category:"epic",asset:"effect://batch40",emoji:"🍌🍎🍓",epic:true,effect:"video3d",postEffect:"fruits",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/5f93f8b2-45a7-4aaa-8ba5-68da43ce25e5.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/ec502a17-efef-49cc-add7-5a8c731c8ab1.mp4"},
+
+  {id:"batch_41_tusovka",name:"Тусовка …",cost:1199,category:"epic",asset:"effect://batch41",emoji:"🐒😎",epic:true,effect:"video3d",postEffect:"monkey_glasses",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/d1251576-3e2e-4bdf-9bcb-559bd420c6ae.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/ebc80dde-a82c-4f41-8ace-aefb29bd2de0.mp4"},
+  {id:"batch_42_kob",name:"Коб..",cost:1199,category:"epic",asset:"effect://batch42",emoji:"🪰💨",epic:true,effect:"video3d",postEffect:"flies",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/a895b430-d826-44a5-8e7b-30aab5c37146.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/77513d52-700c-4395-8d5b-988a4c060441.mp4"},
+  {id:"batch_43_menya_zovut_kyu",name:"Меня зовут Кю",cost:1299,category:"epic",asset:"effect://batch43",emoji:"🐼🥋",epic:true,effect:"video3d",postEffect:"panda_fighter",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/e20e00d0-68ff-4a90-9d6e-cdf76fb2cef7.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/fd1ecf9f-8b7a-487d-a63e-ce00448c82ee.mp4"},
+  {id:"batch_44_mee_saga",name:"Мээ сага 😂",cost:1299,category:"epic",asset:"effect://batch44",emoji:"🎤⛓️",epic:true,effect:"video3d",postEffect:"rapper",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/0136612a-b55f-4ed4-834f-a1b1345be180.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/3356f0c4-1759-4cae-9efe-af614f4417f0.mp4"},
+  {id:"batch_45_ayildagy_baikeler",name:"Айылдагы байкелер …",cost:899,category:"popular",asset:"effect://batch45",emoji:"🎤🔥",epic:true,effect:"video3d",postEffect:"rapper",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/a7d3f666-c824-438d-8da3-cc4c9c9bbeac.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/01c0345f-37d8-4e36-b6fc-e3401ad6237c.mp4"},
+  {id:"batch_46_23_february",name:"23 февраль келатканда 😃🤭",cost:899,category:"popular",asset:"effect://batch46",emoji:"⭐🎉",epic:true,effect:"video3d",postEffect:"holiday23",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/cb66039e-09f3-4943-b9c2-ce211eda05cb.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/78b440a7-cb41-4935-bfb6-d04dddb3682a.mp4"},
+  {id:"batch_47_vrach_dosun",name:"Врач досун 😃",cost:899,category:"popular",asset:"effect://batch47",emoji:"🩺✨",epic:true,effect:"video3d",postEffect:"doctor",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/bcfb0a7b-fd99-4b20-af6f-1389b5806899.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/ba9d10f3-186c-4252-88ab-d42e1e4ac7b6.mp4"},
+  {id:"batch_48_evrej_dosun",name:"Еврей досун …",cost:899,category:"popular",asset:"effect://batch48",emoji:"😎🔥",epic:true,effect:"video3d",postEffect:"macho",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/97572fdf-98af-44e2-bdf0-f8c80763b251.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/56bc085f-6966-481b-b432-9540c0340ace.mp4"},
+  {id:"batch_49_sportik_dosun",name:"Спортик досун …",cost:899,category:"popular",asset:"effect://batch49",emoji:"🏋️🏆",epic:true,effect:"video3d",postEffect:"athlete",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/c7e8601c-204e-434f-b41c-6912b95fa643.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/209b531b-65ed-4a14-a05c-9e66c3821b18.mp4"},
+  {id:"batch_50_matryoshka_love",name:"Ох энен, че за матрешка …💕",cost:899,category:"popular",asset:"effect://batch50",emoji:"💕✨",epic:true,effect:"video3d",postEffect:"love",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/56689e54-999b-4549-9e83-78c770870c9b.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/38d341b4-85a7-44fb-bba2-a71f20be4cd5.mp4"},
+
+  // 2026-09-17 new Kyrgyz gift pack
+  {id:"new_01_gift",name:'Барбайм деп кайда качасын …',cost:549,category:"food",asset:"effect://new-01",emoji:"✨",epic:true,effect:"video3d",postEffect:"komuz",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/442c6cd7-a7c4-4ff2-9569-3d324a38c035.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/94b151ca-c873-4c41-af64-e4ed862fc610.mp4"},
+  {id:"new_02_gift",name:'Секет…',cost:549,category:"food",asset:"effect://new-02",emoji:"✨",epic:true,effect:"video3d",postEffect:"love",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/cc08652a-f42d-4214-ac16-18993b998bcf.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/7b9c1263-dec6-40a6-a751-5d86e7ff429c.mp4"},
+  {id:"new_03_gift",name:'Вот почему мать дороже отца …',cost:599,category:"luxury",asset:"effect://new-03",emoji:"✨",epic:true,effect:"video3d",postEffect:"wisdom",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/345436a5-ace8-4398-94e3-cfb2f4e2ef45.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/78ee3a9f-f8fd-421f-8d14-df7f4273d9c6.mp4"},
+  {id:"new_04_gift",name:'Секет💕💕…',cost:549,category:"food",asset:"effect://new-04",emoji:"✨",epic:true,effect:"video3d",postEffect:"love",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/1d89c66e-acad-47fd-8f20-5c0d9c640597.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/f9b24fdd-bf4b-416e-b3c6-66d97b078488.mp4"},
+  {id:"new_05_gift",name:'Өсөйүн десе муштайбыз …',cost:549,category:"food",asset:"effect://new-05",emoji:"✨",epic:true,effect:"video3d",postEffect:"komuz",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/e39ca5cd-1e31-45d3-bb11-033ac1233b28.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/3b1ed49e-2e49-4aa4-a514-33f3155d2b8f.mp4"},
+  {id:"new_06_gift",name:'Ата эне кадырын …',cost:549,category:"luxury",asset:"effect://new-06",emoji:"✨",epic:true,effect:"video3d",postEffect:"komuz",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/77ae3f05-45c5-42ed-a757-ed52ba4caebb.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/fdba30e3-973b-44c5-8b27-9534fe72f3fb.mp4"},
+  {id:"new_07_gift",name:'Жигит …',cost:599,category:"luxury",asset:"effect://new-07",emoji:"✨",epic:true,effect:"video3d",postEffect:"wisdom",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/41c94e4d-5ef9-4ee3-9639-5c351763fcdb.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/ead89d7e-c071-4511-a3b6-c1cfa18261e1.mp4"},
+  {id:"new_08_gift",name:'Не жаман …',cost:549,category:"food",asset:"effect://new-08",emoji:"✨",epic:true,effect:"video3d",postEffect:"komuz",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/b2eeb1f8-b864-4edb-9bba-c8cad4d58cb1.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/9d65f2c0-8261-4f03-a6e1-924ea0f303fd.mp4"},
+  {id:"new_09_gift",name:'Кызыгын көрбөйт дүйнөнүн, кыз сыйлабас макулук …',cost:549,category:"food",asset:"effect://new-09",emoji:"✨",epic:true,effect:"video3d",postEffect:"komuz",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/a8ea8ce5-ec6a-4919-9152-1380533d35d3.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/64559c6d-8c1c-445c-a0aa-1ba22398f097.mp4"},
+  {id:"new_10_gift",name:'Кайжака качпайлы, өлүм алдыбызда',cost:599,category:"friendly",asset:"effect://new-10",emoji:"✨",epic:true,effect:"video3d",postEffect:"wisdom",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/e8268a44-d1cd-46bd-84cd-349fe48974ee.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/49d9a201-38a4-4c4c-a030-7c3ca825c05a.mp4"},
+  {id:"new_11_gift",name:'Атандын көрү дүнүйө…',cost:549,category:"food",asset:"effect://new-11",emoji:"✨",epic:true,effect:"video3d",postEffect:"manas",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/7b6c46bd-0d7b-4933-ac46-b64201bc67d3.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/02d7083d-4c3b-429e-87d4-05180294e22f.mp4"},
+  {id:"new_12_gift",name:'Кек сактаба …',cost:599,category:"luxury",asset:"effect://new-12",emoji:"✨",epic:true,effect:"video3d",postEffect:"komuz",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/eb676267-69ee-49d2-bc85-c535940e8e5b.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/514d35e1-a33c-4591-b473-5bb6cb656eed.mp4"},
+  {id:"new_14_gift",name:'Акылдуу аял кандай болот …',cost:599,category:"friendly",asset:"effect://new-14",emoji:"✨",epic:true,effect:"video3d",postEffect:"komuz",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/e47665aa-12e5-49d5-9950-4eac61517d96.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/e835235b-d9f6-4773-9eee-61ebcf83d69c.mp4"},
+  {id:"new_15_gift",name:'Жакшы-кулк мүнөз …',cost:599,category:"luxury",asset:"effect://new-15",emoji:"✨",epic:true,effect:"video3d",postEffect:"wisdom",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/74ac5385-7737-400a-a019-1909147cca72.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/179e3383-1d74-41ce-a850-8d215f0ff6e0.mp4"},
+  {id:"new_16_gift",name:'Кээ бир нерсени жоготкон кезде…',cost:599,category:"fun",asset:"effect://new-16",emoji:"✨",epic:true,effect:"video3d",postEffect:"wisdom",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/56cd1909-80e0-4669-9db7-3d2c5e14a000.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/515e1266-8e55-4542-a82f-2ec9c34e455c.mp4"},
+  {id:"new_17_gift",name:'Ар дайым чын сүйлөгөн адам …',cost:599,category:"friendly",asset:"effect://new-17",emoji:"✨",epic:true,effect:"video3d",postEffect:"wisdom",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/e5d35a3c-ff47-485a-a040-f3e55a796e94.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/81c022b9-535a-4b4d-9527-bae015f720a2.mp4"},
+  {id:"new_18_gift",name:'Маңдайына жазылган нерсе, ал сөзсүз келет 💝…',cost:599,category:"luxury",asset:"effect://new-18",emoji:"✨",epic:true,effect:"video3d",postEffect:"wisdom",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/77e86984-dca5-4ed7-b276-00ac50158e97.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/3fbbab62-427c-4a2c-834f-995a9d3e21ea.mp4"},
+  {id:"new_19_gift",name:'Бактылуулук кайда …',cost:599,category:"luxury",asset:"effect://new-19",emoji:"✨",epic:true,effect:"video3d",postEffect:"wisdom",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/ba3ec210-83e5-4fc4-b589-269f9f37915c.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/66559506-4c95-49b4-a366-9529ffe8c0a9.mp4"},
+  {id:"new_20_gift",name:'Маңдайына жазылган нерсе ал …',cost:599,category:"luxury",asset:"effect://new-20",emoji:"✨",epic:true,effect:"video3d",postEffect:"wisdom",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/17396bac-e444-4d83-9fd3-2a78243ed7fe.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/82b78778-7621-4557-ab1d-91fbf1f3a60d.mp4"},
+  {id:"new_21_gift",name:'Даражаны көтөрө турган …',cost:599,category:"friendly",asset:"effect://new-21",emoji:"✨",epic:true,effect:"video3d",postEffect:"wisdom",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/cd2ab0ea-fd57-401d-863b-9702c05ee3f6.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/eb0a4d0b-058f-490a-8f0b-264cf33e78dc.mp4"},
+  {id:"new_22_gift",name:'Ар кимдин келиши — бир сыноо, бир белек …',cost:599,category:"luxury",asset:"effect://new-22",emoji:"✨",epic:true,effect:"video3d",postEffect:"wisdom",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/31443c0c-9baa-4c1e-ba64-cb57b77889d8.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/a0b4539f-4159-425d-afc5-f88b1881dce6.mp4"},
+  {id:"new_23_gift",name:'Зынаа кылган адамдын …',cost:599,category:"luxury",asset:"effect://new-23",emoji:"✨",epic:true,effect:"video3d",postEffect:"wisdom",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/a7b272fe-025e-4bc5-b2ed-474c550143c0.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/abb551eb-4bba-487b-97ed-030149c6c1e5.mp4"},
+  {id:"new_24_gift",name:'Намаз окуйм бирок наша чегем …',cost:599,category:"luxury",asset:"effect://new-24",emoji:"✨",epic:true,effect:"video3d",postEffect:"wisdom",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/25142f20-8423-4423-9d28-88040b3c6005.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/eb146a79-2d45-463b-8888-ed95cbebbe6b.mp4"},
+  {id:"new_25_gift",name:'Сени сүйө беремин …',cost:499,category:"friendly",asset:"effect://new-25",emoji:"💕",epic:true,effect:"video3d",postEffect:"love",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/0ad90ab3-b3d0-4a24-876a-1d70de566f87.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/d19d4d9d-a589-428e-8faf-be4c50ef6c61.mp4"},
+  {id:"new_26_gift",name:'Истихфар айткыла күнөөлөр кечирилет …',cost:599,category:"luxury",asset:"effect://new-26",emoji:"✨",epic:true,effect:"video3d",postEffect:"wisdom",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/2b22a807-3a3a-4c2d-902b-748d5abe8094.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/6a9bdf08-fc4c-43ba-8d5c-facc3c9d25ed.mp4"},
+  {id:"new_27_gift",name:'Жума күнү кошулса болобу? …',cost:599,category:"luxury",asset:"effect://new-27",emoji:"✨",epic:true,effect:"video3d",postEffect:"wisdom",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/89d59ee7-c631-4757-8d9b-808ce44ce4fa.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/b4691276-db95-4f7a-982d-cf9a536ddcda.mp4"},
+  {id:"new_28_gift",name:'Жан дүйнөм жарты болбосун …',cost:599,category:"luxury",asset:"effect://new-28",emoji:"✨",epic:true,effect:"video3d",postEffect:"wisdom",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/401c23f7-5a8c-4050-a609-94bb39efbb75.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/b8f27882-7230-4f95-a535-50dcda1e24cd.mp4"},
+  {id:"new_29_gift",name:'Зарылчылык бүттү, ырахаттандыңыз анан …',cost:599,category:"luxury",asset:"effect://new-29",emoji:"✨",epic:true,effect:"video3d",postEffect:"wisdom",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/6ae943a1-caf3-432a-8d1a-054b32027142.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/7e649d64-0b58-4605-8e6e-a41c1b458acb.mp4"},
+  {id:"new_30_gift",name:'Өрдөк учат көл калат, өлбөй тирүү ким калат? …',cost:499,category:"friendly",asset:"effect://new-30",emoji:"💕",epic:true,effect:"video3d",postEffect:"love",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/6cc02bb5-26b7-4df7-bbe5-53301473e696.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/bf033566-13fa-4c7d-97c3-a7a16bea5316.mp4"},
+  {id:"new_31_gift",name:'Бул поэзия сүйгөн адамыңыз үчүн …',cost:499,category:"friendly",asset:"effect://new-31",emoji:"💕",epic:true,effect:"video3d",postEffect:"love",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/4f44802d-fe6b-48e5-8988-cf06fed4d56b.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/ca2d3ab3-4d5b-4a76-a87c-93c4600a8b28.mp4"},
+  {id:"new_20260917_01",name:"Кыздын табияты сулуу болгон менен …",cost:499,category:"friendly",asset:"effect://new-20260917-01",emoji:"💕",epic:true,effect:"video3d",postEffect:"love",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/2656f7ed-7565-448d-a417-5b603789edfb.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/131d35a9-63a9-4d29-bbc3-da8288b9d2f0.mp4"},
+  {id:"new_20260917_02",name:"Үй-бүлөлүк суроо …",cost:599,category:"luxury",asset:"effect://new-20260917-02",emoji:"✨",epic:true,effect:"video3d",postEffect:"wisdom",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/2cebb819-c586-41dc-8063-11e6cab0550b.png",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/ca93ccab-0252-4857-83c0-7713343bf20b.mp4"},
+  {id:"new_20260917_03",name:"Келгиле туугандар намаз окуйлу …",cost:599,category:"luxury",asset:"effect://new-20260917-03",emoji:"🌙✨",epic:true,effect:"video3d",postEffect:"wisdom",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/c7276314-f7bc-4820-88ff-825fc3d3ab94.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/d36ad185-0e36-47b0-8524-47122157caff.mp4"},
+  {id:"new_20260917_04",name:"ЧУБАК АЖЫ💕…",cost:599,category:"luxury",asset:"effect://new-20260917-04",emoji:"🌙✨",epic:true,effect:"video3d",postEffect:"wisdom",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/3db20955-887b-46c2-a2f6-347ee09eeb4a.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/88514457-ac75-4b08-805f-bdd4138de9aa.mp4"},
+  {id:"lion",name:"Золотой лев",cost:999,category:"tiktok",asset:"effect://lion-real-v4",emoji:"🦁",epic:true,effect:"lion",thumb:"https://kiss-meet-club.higgsfield.app/assets/gifts/lion-real-v4/lion-jump-real-v4.webp?v=4",videoUrl:"https://kiss-meet-club.higgsfield.app/assets/gifts/lion-real-v4/lion-jump-real-v10-silent.mp4?v=10"},
+  {id:"kyrgyz_warrior",name:"Воин",cost:999,category:"popular",asset:"effect://kyrgyz-warrior",emoji:"🇰🇬",epic:true,effect:"kyrgyzWarrior",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/a3e46c40-289a-48a0-873b-3299d69d97ae.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/b6c1aad5-12e0-4ac2-8264-a996ad77aae9.mp4"},
+  {id:"aurakg",name:"aurakg",cost:999,category:"popular",asset:"effect://aurakg",emoji:"⚡",epic:true,effect:"aurakg",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/b957f332-c721-4527-b9e1-6d78e08d3244.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/a2980340-82b8-4dd8-b66c-666072acf888.mp4"},
+  {id:"bauri_vip",name:"Баури VIP",cost:1499,category:"tiktok",asset:"effect://bauri-vip",emoji:"🚙✨",epic:true,effect:"bauri",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/37e30f09-532c-4140-ae99-53064112a522.jpg",videoUrl:"https://d8j0ntlcm91z4.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/hf_20260915_080027_8eccd2b9-f0ef-49a8-9ffb-3eeb6cb85c13.mp4",audioUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/c86a39dc-e6b1-4573-943c-3162d06d8787.mp3"},
+
+  {id:"batch_01_syndyryp_koem",name:"Сындырып коем",cost:399,category:"epic",asset:"effect://batch-01-syndyryp-koem",emoji:"🔫💥",epic:true,effect:"video3d",postEffect:"pistol",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/aab22c2c-2828-4b2d-88b2-d873fb5520da.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/f62d9375-b96b-4b4d-9991-77c0131f563c.mp4"},
+  {id:"batch_02_ysyk_jan",name:"Ысык жан",cost:199,category:"friendly",asset:"effect://batch-02-ysyk-jan",emoji:"💕✨",epic:true,effect:"video3d",postEffect:"love",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/a500b403-cc4b-4486-a735-f876ec8cef41.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/bae71360-73c3-4e73-85cc-ca31da9a2ffd.mp4"},
+  {id:"batch_03_karyzdy_ber_dosum",name:"Карызды бер досум 🤭",cost:249,category:"fun",asset:"effect://batch-03-karyzdy-ber-dosum",emoji:"💥😂",epic:true,effect:"video3d",postEffect:"knockback",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/0bd65729-6abe-427f-aadb-a0b00f804460.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/63f8e655-287c-4daf-8638-9406f16a1508.mp4"},
+  {id:"batch_04_aaa_jetim",name:"Ааа жетим 😃",cost:249,category:"fun",asset:"effect://batch-04-aaa-jetim",emoji:"🧐❓",epic:true,effect:"video3d",postEffect:"suspicion",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/19a8e8d8-c5d9-4a25-a72a-b0944005d9d6.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/b3a4cd6b-fd75-48f8-8f63-f7c770248e04.mp4"},
+  {id:"batch_05_nema_kylaman",name:"Нема кыламан 😋",cost:249,category:"fun",asset:"effect://batch-05-nema-kylaman",emoji:"🍭😋",epic:true,effect:"video3d",postEffect:"lollipop",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/34c76588-eaf1-4cc2-8353-ca37ed3551a0.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/b56e5fd7-4917-453d-8836-8ae847516ef9.mp4"},
+  {id:"batch_06_ne_lublu",name:"Я тебя не люблю",cost:199,category:"friendly",asset:"effect://batch-06-ne-lublu",emoji:"💔☁️",epic:true,effect:"video3d",postEffect:"sulky",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/e78f5e5b-a482-4fff-96f3-6fae49a86977.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/d5a9808e-5e43-4ba2-b45e-a020bdf6b370.mp4"},
+  {id:"batch_07_fatima_love",name:"Fatima i love you 💕",cost:199,category:"friendly",asset:"effect://batch-07-fatima-love",emoji:"🧑🏿💕",epic:true,effect:"video3d",postEffect:"chaba_love",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/75ccdbcc-67f4-45fe-8ea8-f59f7d8d99f7.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/651aebbe-a0f6-4e2c-a271-78df2acb67a9.mp4"},
+  {id:"batch_09a_jan_sen_uchun",name:"Жан сен учун 💕",cost:199,category:"friendly",asset:"effect://batch-09a-jan-sen-uchun",emoji:"🌹💕",epic:true,effect:"video3d",postEffect:"love",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/1d058f85-c77d-4d27-8f2c-2909999ab0da.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/b8672c4f-3272-4e0c-b617-4cf65386b76b.mp4"},
+  {id:"batch_09b_yssyk_jan",name:"Ыссык жан 💕",cost:199,category:"friendly",asset:"effect://batch-09b-yssyk-jan",emoji:"🔥💕",epic:true,effect:"video3d",postEffect:"love",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/31d1cb7b-6715-49a5-aa48-c1dbc23905a6.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/2ba6ae98-d478-4de5-b0f0-be86abcffef8.mp4"},
+  {id:"batch_10_ulibka",name:"Твоя улыбка способна согреть 😋",cost:199,category:"friendly",asset:"effect://batch-10-ulibka",emoji:"😊💕",epic:true,effect:"video3d",postEffect:"love",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/2ce43206-afd7-42c2-a470-d8d314745e58.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/06689ee9-2272-4524-8380-ab2f26321d83.mp4"},
+  {id:"batch_11_samoe_prekrasnoe",name:"Ты — самое прекрасное, что есть в моей жизни…",cost:199,category:"friendly",asset:"effect://batch-11-samoe-prekrasnoe",emoji:"💖✨",epic:true,effect:"video3d",postEffect:"love",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/333dc5b1-4c02-4671-bdcc-3ebe96ad4de9.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/385a699c-75b9-4574-b676-8cdbc34ccabe.mp4"},
+  {id:"batch_12_celochka",name:"Мен целочка турамго 😀",cost:249,category:"fun",asset:"effect://batch-12-celochka",emoji:"🎆😀",epic:true,effect:"video3d",postEffect:"fireworks",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/8ca8868e-365d-4716-b81c-17de00475ef6.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/6e4a4176-bc06-4cab-8db3-0ea3accd57f2.mp4"},
+  {id:"batch_13_tur_turagoi",name:"Тур турагой кыргызым 😮‍💨..",cost:249,category:"fun",asset:"effect://batch-13-tur-turagoi",emoji:"🎇😮‍💨",epic:true,effect:"video3d",postEffect:"fireworks",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/31cc0f66-bad3-48d1-b2cd-1d6c233f092b.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/916e547a-6ad8-4b30-88f2-00de0aad7353.mp4"},
+  {id:"batch_14_zhestka_nakazhu",name:"Жестка накажу 😡",cost:249,category:"fun",asset:"effect://batch-14-zhestka-nakazhu",emoji:"🍀😡",epic:true,effect:"video3d",postEffect:"lucky",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/5fe9dfc6-566f-472c-a863-b181fd02268d.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/92dea1bd-d480-466d-abff-8053daa99ce9.mp4"},
+  {id:"batch_15_eto_dlya_tebya",name:"Это для тебя 💕",cost:199,category:"friendly",asset:"effect://batch-15-eto-dlya-tebya",emoji:"💐💕",epic:true,effect:"video3d",postEffect:"love",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/7e4660de-5e18-4fab-aef5-8c64e59765e7.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/05d905c4-d941-436a-9dc1-ca26c1326736.mp4"},
+
+  {id:"new_20260919_01",name:"Сенин Чанач подружкан …",cost:499,category:"popular",asset:"effect://new-20260919-01",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/a24eda6e-90e5-4ce7-88db-0c19e0d2b6c9.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/5360e700-fa14-4345-a8cc-6e10101f8b41.mp4"},
+  {id:"new_20260919_02",name:"спордон утулуп калганда …",cost:499,category:"popular",asset:"effect://new-20260919-02",emoji:"😎🔥",epic:true,effect:"video3d",postEffect:"macho",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/3caac48e-887f-48db-866e-308642028e22.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/7cea7d19-6b55-4e8e-a60d-8923f40b8e31.mp4"},
+  {id:"new_20260919_03a",name:"тюпскийлер барбы?…",cost:499,category:"popular",asset:"effect://new-20260919-03a",emoji:"😎🔥",epic:true,effect:"video3d",postEffect:"macho",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/6d169df6-a213-462c-afaf-0f6199d92b87.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/948ad690-bf42-4896-8e15-60128cf7ca29.mp4"},
+  {id:"new_20260919_03b",name:"моюна албаган досун …",cost:499,category:"popular",asset:"effect://new-20260919-03b",emoji:"😎🔥",epic:true,effect:"video3d",postEffect:"macho",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/b38c38f6-45b6-43d6-886e-75c9defc6811.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/e13578d2-3ffd-4dd9-81d8-2b3072706605.mp4"},
+  {id:"new_20260919_03c",name:"жп досун …",cost:499,category:"popular",asset:"effect://new-20260919-03c",emoji:"😎🔥",epic:true,effect:"video3d",postEffect:"macho",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/097ac0f1-79bc-4d0a-a113-ca32aef91260.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/c15a889f-5031-44ff-b5c5-f9f15f388cd9.mp4"},
+
+
+  {id:"new_20260919_04",name:"супер жп досун …",cost:499,category:"popular",asset:"effect://new-20260919-04",emoji:"😎🔥",epic:true,effect:"video3d",postEffect:"macho",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/5b906102-6463-4b1f-8d3a-87706f29e7a6.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/c3cab3cf-2379-4867-8031-8555dc1f018a.mp4"},
+  {id:"new_20260919_05",name:"крутой досун …",cost:499,category:"popular",asset:"effect://new-20260919-05",emoji:"😎🔥",epic:true,effect:"video3d",postEffect:"macho",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/5522fc8e-3973-4e6e-981a-2611c956ff46.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/ab1011de-1d18-4aa0-ab10-e40e977780f6.mp4"},
+  {id:"new_20260919_06",name:"бийчи досун …",cost:499,category:"popular",asset:"effect://new-20260919-06",emoji:"😎🔥",epic:true,effect:"video3d",postEffect:"macho",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/9bd8e1f1-a510-4428-98da-2bcf5a5e0fd3.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/f13a1295-f68f-413e-8000-163c70e03b15.mp4"},
+  {id:"new_20260919_07",name:"балапандарым барсынарбы я …",cost:499,category:"popular",asset:"effect://new-20260919-07",emoji:"😎🔥",epic:true,effect:"video3d",postEffect:"macho",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/6791d284-0600-4189-92d5-0a8ca7434eaa.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/2b4e5c75-3b38-4651-845f-d799b2a74505.mp4"},
+  {id:"new_20260919_08",name:"твой ответ …",cost:499,category:"popular",asset:"effect://new-20260919-08",emoji:"😎🔥",epic:true,effect:"video3d",postEffect:"macho",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/1ce5832e-b7b8-4fdf-bae0-3ea7195f8cbe.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/c8a994e2-48ef-4aca-b9b1-4ff8527e9436.mp4"},
+
+
+  {id:"new_20260919_09",name:"сени …",cost:499,category:"popular",asset:"effect://new-20260919-09",emoji:"😎🔥",epic:true,effect:"video3d",postEffect:"macho",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/15f76790-87b5-4389-b92b-d2b98b638cde.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/fce2ff7a-562c-4e9a-abf9-3efb86e407d4.mp4"},
+  {id:"new_20260919_10",name:"катыган досун …",cost:499,category:"popular",asset:"effect://new-20260919-10",emoji:"😎🔥",epic:true,effect:"video3d",postEffect:"macho",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/82931e32-8207-4284-8361-5ef632314589.mp4"},
+  {id:"new_20260919_11",name:"девушканды таштап кеткенде …",cost:499,category:"popular",asset:"effect://new-20260919-11",emoji:"😎🔥",epic:true,effect:"video3d",postEffect:"macho",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/97dedf36-764b-49d4-90da-2e2a61ea7ee8.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/ec584a7a-bf1f-4161-a1c3-839ad5e56dea.mp4"},
+  {id:"new_20260919_12",name:"капталдан караганда…",cost:499,category:"popular",asset:"effect://new-20260919-12",emoji:"😎🔥",epic:true,effect:"video3d",postEffect:"macho",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/f14c12e1-b351-4757-b70c-b49a7738851b.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/4ccb3cf7-c921-4c2e-b5f0-c7ff92b519a2.mp4"},
+  {id:"new_20260919_13",name:"каяака кетип калдыныз",cost:499,category:"popular",asset:"effect://new-20260919-13",emoji:"😎🔥",epic:true,effect:"video3d",postEffect:"macho",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/6272928c-9295-4812-9eaa-6e5b4f755179.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/1573a0e2-679d-487b-b4d1-80a26e77c0f6.mp4"},
+
+
+  {id:"new_20260919_14",name:"ушундайды минип журсон болот элего",cost:499,category:"popular",asset:"effect://new-20260919-14",emoji:"😎🔥",epic:true,effect:"video3d",postEffect:"macho",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/88ce5977-2749-4edf-bf94-ab7874181684.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/3ac6f7fb-7fc1-4fad-a6ad-8218ed5e5617.mp4"},
+  {id:"new_20260919_15",name:"жаман балдарга кошулуп",cost:499,category:"popular",asset:"effect://new-20260919-15",emoji:"😎🔥",epic:true,effect:"video3d",postEffect:"macho",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/6e994b1d-1eca-454f-9321-ea3c838f59bf.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/58197001-8850-46ed-b6a2-dbdc5f42ccb6.mp4"},
+  {id:"new_20260919_16",name:"роднойлорунду белгиле",cost:499,category:"popular",asset:"effect://new-20260919-16",emoji:"😎🔥",epic:true,effect:"video3d",postEffect:"macho",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/ab8357ac-3357-45e0-b054-7c5241b7c336.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/985ca534-9cd4-4f4d-bca1-40b38c7b9433.mp4"},
+  {id:"new_20260919_17",name:"бечара досум",cost:499,category:"popular",asset:"effect://new-20260919-17",emoji:"😎🔥",epic:true,effect:"video3d",postEffect:"macho",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/404f9aa0-3082-43b3-a9ce-7940a9e33274.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/759acb06-cf19-43d8-a30d-967f98a7a300.mp4"},
+  {id:"new_20260919_19",name:"1 туртум жетпей калгамбы десем …",cost:499,category:"popular",asset:"effect://new-20260919-19",emoji:"😎🔥",epic:true,effect:"video3d",postEffect:"macho",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/622a80a8-bd26-4039-96b7-4ae4fea40392.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/b5f22b82-6bf9-47a6-bfee-146b429d0bf7.mp4"},
+
+
+  {id:"new_20260919_20",name:"иштесен болот экенго …",cost:499,category:"popular",asset:"effect://new-20260919-20",emoji:"😎🔥",epic:true,effect:"video3d",postEffect:"macho",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/d4df66a1-c47f-40c2-9aab-8edef2a3a35c.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/18b8ba31-0448-4e3c-b486-de13d4f3af90.mp4"},
+  {id:"new_20260919_21",name:"мой русский нужный момент …",cost:499,category:"popular",asset:"effect://new-20260919-21",emoji:"😎🔥",epic:true,effect:"video3d",postEffect:"macho",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/265e7fff-8993-4ed8-bc58-1d5e472ba6b0.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/2def5c53-722b-415d-a80d-bce1b9058f51.mp4"},
+  {id:"new_20260919_22",name:"суроо жооп…",cost:499,category:"popular",asset:"effect://new-20260919-22",emoji:"😎🔥",epic:true,effect:"video3d",postEffect:"macho",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/7a86b62c-f914-455b-a2d4-c680b4093d3b.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/dd51fc07-d266-41f4-a8b2-7153d2f8c91e.mp4"},
+
+
+  {id:"new_20260919_23",name:"соскалар кадасынар…",cost:499,category:"popular",asset:"effect://new-20260919-23",emoji:"😎🔥",epic:true,effect:"video3d",postEffect:"macho",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/0ccd83fc-c9fa-4d0d-a1e2-bf87ed737ba3.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/b6b60f2d-cc67-4982-8f8c-14353ade8914.mp4"},
+
+
+  {id:"new_20260919_24",name:"депресияда…",cost:499,category:"popular",asset:"effect://new-20260919-24",emoji:"😎🔥",epic:true,effect:"video3d",postEffect:"macho",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/e6b258ce-f312-4857-bcc3-f11be4d37504.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/999317ee-a234-47c1-b06e-e08fb346c1cc.mp4"},
+  {id:"new_20260919_25",name:"поворот не туда …",cost:499,category:"popular",asset:"effect://new-20260919-25",emoji:"😎🔥",epic:true,effect:"video3d",postEffect:"macho",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/899e4bcf-1b79-44dc-8732-6326e38290b8.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/ca993dc1-7d5a-4223-adde-83c7f65b6480.mp4"},
+  {id:"new_20260919_26",name:"жашоо бар жашаш керек …",cost:499,category:"popular",asset:"effect://new-20260919-26",emoji:"😎🔥",epic:true,effect:"video3d",postEffect:"macho",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/29038574-2faa-4012-8ef3-9c89b5872610.mp4"},
+  {id:"new_20260919_27",name:"раслабуха…",cost:499,category:"popular",asset:"effect://new-20260919-27",emoji:"😎🔥",epic:true,effect:"video3d",postEffect:"macho",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/56b5bdec-1471-4c81-a448-b60cac2ca6ce.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/1d36a390-abf3-4ece-a67c-73b03e69834a.mp4"},
+  {id:"new_20260919_28",name:"эй кое турсан…",cost:499,category:"popular",asset:"effect://new-20260919-28",emoji:"😎🔥",epic:true,effect:"video3d",postEffect:"macho",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/7ce011c3-514c-40be-87a1-8d5a21d74446.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/3c06830e-7a2b-45c3-9ed0-7d042a751d34.mp4"},
+
+
+  {id:"new_20260919_29",name:"чабан досун…",cost:499,category:"popular",asset:"effect://new-20260919-29",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/98f777f5-40b1-4b28-aca3-773cd453688b.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/68b71326-419d-49d0-a6cd-064b57e39f79.mp4"},
+  {id:"new_20260919_30",name:"карангыда кирем…",cost:499,category:"popular",asset:"effect://new-20260919-30",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/c838cf0c-ad90-46f2-a45e-a65b619dbbe2.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/02a1965c-6959-4426-b068-8c696a4376b0.mp4"},
+
+
+
+  {id:"new_20260919b_01",name:"тийишсен мага …",cost:499,category:"popular",asset:"effect://new-20260919b-01",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/e49ec49d-9595-4033-a318-dc74ff80f59f.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/daf76733-e4ce-4cfe-af06-f6c34ddd3a6c.mp4"},
+  {id:"new_20260919b_02",name:"жапжакшына жургон бала элен …",cost:499,category:"popular",asset:"effect://new-20260919b-02",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/aa95df24-5676-4136-b23f-f9e877d62c41.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/c9b18ebb-f9d5-43da-90e0-7248a7b5018e.mp4"},
+  {id:"new_20260919b_03",name:"туш энен туш …",cost:499,category:"popular",asset:"effect://new-20260919b-03",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/86256497-cfaf-4ab0-a262-26a372b8d20c.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/e76d11bb-7202-4f8a-879f-00c402f183d6.mp4"},
+  {id:"new_20260919b_04",name:"өткөндө эмнеге качьын…",cost:499,category:"popular",asset:"effect://new-20260919b-04",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/ed95ad93-bde7-4537-91c9-821b9e6da69e.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/2129d2a7-fa35-4e96-a527-14c1286e0a49.mp4"},
+  {id:"new_20260919b_05",name:"саламдашып жур …",cost:499,category:"popular",asset:"effect://new-20260919b-05",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/c67347c2-d8c8-4e25-9eb8-c887d5aac8cf.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/d49b3c4b-7007-4b9c-9e5d-50f485733484.mp4"},
+  {id:"new_20260919b_06",name:"ал эмнеге пайда …",cost:499,category:"popular",asset:"effect://new-20260919b-06",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/888c6aa6-46ff-418d-a81f-7e86b3418a02.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/1b0e690c-fc10-4dfe-9190-82806c2a579e.mp4"},
+  {id:"new_20260919b_07",name:"мага кыз керек …",cost:499,category:"popular",asset:"effect://new-20260919b-07",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/c566c29c-bd54-4915-8a4b-f5bc389ec8e5.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/99265cc0-9f18-40c0-80a7-7f9a8f13f061.mp4"},
+  {id:"new_20260919b_08",name:"уккула бери …",cost:499,category:"popular",asset:"effect://new-20260919b-08",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/062be31e-279e-491f-8333-740a2155704c.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/1389148d-d493-4793-88b4-5f67a6118d9f.mp4"},
+  {id:"new_20260919b_09",name:"интерью года …",cost:499,category:"popular",asset:"effect://new-20260919b-09",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/5703a7b4-8d79-488a-9845-311342a2ba0e.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/9919528d-70a5-4118-8c34-0592c70d235c.mp4"},
+  {id:"new_20260919b_10",name:"оюм 4 бурчтук …",cost:499,category:"popular",asset:"effect://new-20260919b-10",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/3d9a290b-0ac1-4260-9c62-a00176a0badb.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/493c8c11-8ba6-47c6-805a-8deaa4170f4b.mp4"},
+  {id:"new_20260919b_11",name:"мои дни …",cost:499,category:"popular",asset:"effect://new-20260919b-11",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/911f4050-9b8f-4d80-9ec7-b324b49325d0.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/f9af400a-87a0-4479-bb99-2b02dfea011c.mp4"},
+  {id:"new_20260919b_12",name:"топ …",cost:499,category:"popular",asset:"effect://new-20260919b-12",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/7bdf91f9-9ba1-47cb-a56f-a770b8539f11.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/175aceac-6f4f-4649-a21f-c8757a5aae6d.mp4"},
+  {id:"new_20260919b_13",name:"kyrgyz core …",cost:499,category:"popular",asset:"effect://new-20260919b-13",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/50296530-9b0e-4b40-a69b-d30234aca3e3.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/1ab76932-f55e-4eea-9b57-244685748ca7.mp4"},
+  {id:"new_20260919b_14",name:"Kyrgyz core2 …",cost:499,category:"popular",asset:"effect://new-20260919b-14",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/4805b657-0afc-44ad-be34-c1ca0bed5c26.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/ec819da3-9fcc-4f07-b899-4abcc1d44aaa.mp4"},
+  {id:"new_20260919b_15",name:"надоела жит под напрягом …",cost:499,category:"popular",asset:"effect://new-20260919b-15",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/ea63c9c6-2a79-47b7-9927-d777b7dec492.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/7ebb8815-7f10-468b-acbc-acf723a82ab0.mp4"},
+  {id:"new_20260919b_16",name:"когда ты в психологе …",cost:499,category:"popular",asset:"effect://new-20260919b-16",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/2e016945-737b-49b4-8850-2108fb4cc598.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/bd77a30d-e889-4555-9bb3-855d7f011c85.mp4"},
+  {id:"new_20260920_01",name:"ана сага …",cost:499,category:"fun",asset:"effect://new-20260920-01",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/dda4983d-1d63-4baa-93c4-05188bae38cd.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/de162cdf-594f-4853-806d-d25d5d497378.mp4"},
+  {id:"new_20260920_02",name:"педро …",cost:499,category:"fun",asset:"effect://new-20260920-02",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/7201523d-6557-41f8-9a59-5a07f11666b0.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/87f07f6b-7d57-408a-afb4-7bf8b1f2cfbf.mp4"},
+  {id:"new_20260920_03",name:"сени уйду карап тур дегенде…",cost:499,category:"fun",asset:"effect://new-20260920-03",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/86999e9b-b097-429c-ac04-e4cbe7565b8c.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/33f28ff2-f640-4c1d-b8a9-35337a7635ac.mp4"},
+  {id:"new_20260920_04",name:"…. …",cost:499,category:"fun",asset:"effect://new-20260920-04",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/4f0eec48-9647-4b22-a71a-8526b8567647.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/d00a32f4-8ca0-4b05-8055-c8a34c266140.mp4"},
+  {id:"new_20260920_05",name:"некто не идеялен …",cost:499,category:"fun",asset:"effect://new-20260920-05",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/dd2f8315-a86f-46c5-9580-714fbc826cc8.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/7b75f17e-0f2b-4deb-ac51-d32130f92a0d.mp4"},
+  {id:"new_20260920_06",name:"борец …",cost:499,category:"fun",asset:"effect://new-20260920-06",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/f8bb8f6e-dd50-4ae6-b3a8-2476c5fefd56.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/e3eb3398-2d8d-4fc1-b5d8-b5ea5bbcec92.mp4"},
+  {id:"new_20260920_07",name:"арбир достордо болгон окуя",cost:499,category:"epic",asset:"effect://new-20260920-07",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/2ae685be-9f0b-4a35-ba4f-3de4473d0c5f.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/f093b911-f3b9-479e-a72e-8fb5b1a02008.mp4"},
+  {id:"new_20260920_08",name:"качып кетчудой болуп атат",cost:499,category:"fun",asset:"effect://new-20260920-08",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/492a0871-ff51-4f2b-b46a-7d844d57a7a3.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/89fd900d-953a-48c1-92ac-510cf5ccaa0b.mp4"},
+  {id:"new_20260920_09",name:"көгу журбойт да …",cost:499,category:"fun",asset:"effect://new-20260920-09",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/ec8dc555-a26d-4685-bb94-e81f307ee746.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/1031bd5c-479a-46c8-a8c8-5a3e7a33c53b.mp4"},
+  {id:"new_20260920_10",name:"бир кун ишкылганда …",cost:499,category:"fun",asset:"effect://new-20260920-10",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/21a3cc99-9fea-4a3b-87f2-15905b81cdbd.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/17abc7d1-5587-4f63-9712-7f84547eebdb.mp4"},
+  {id:"new_20260920_11",name:"көп иштегенге мотивацияны сизге ким берет",cost:499,category:"fun",asset:"effect://new-20260920-11",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/23906a91-c31d-438e-abce-d351acdb4662.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/91f8a0c9-6829-4951-ae78-33351a635493.mp4"},
+  {id:"new_20260920_12",name:"дана баткенский …",cost:499,category:"fun",asset:"effect://new-20260920-12",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/85322073-2a24-42b4-aa30-e44e23eca4c4.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/09a515f6-2baf-4cb8-9b75-161977673aeb.mp4"},
+  {id:"new_20260920_13",name:"сига аласызбы…",cost:499,category:"fun",asset:"effect://new-20260920-13",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/16bb4d86-2a39-46c6-ba30-246e9a3a1d05.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/27cab9da-f158-418a-9bce-f7739240bd10.mp4"},
+  {id:"new_20260920_14",name:"күн ыссыккы …",cost:499,category:"fun",asset:"effect://new-20260920-14",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/e1b87ec1-a82b-4e4d-8de3-ccf9c400dab2.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/cc1441a2-668e-4012-9c6e-02b19b4ae754.mp4"},
+  {id:"new_20260920_15",name:"огнетушитель …",cost:499,category:"fun",asset:"effect://new-20260920-15",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/5fc80879-c8fa-47a4-88d7-ae4b41848dc3.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/03c4e593-ab24-4642-849b-412fe642ea0d.mp4"},
+  {id:"new_20260920_16",name:"15 кусок хлеба …",cost:499,category:"fun",asset:"effect://new-20260920-16",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/128fbca6-b532-4c63-92d7-882445c5e83f.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/cd82fa61-8c6e-4a2b-a021-df2b2c1b463a.mp4"},
+  {id:"new_20260920_17",name:"акыркы кундөру …",cost:499,category:"fun",asset:"effect://new-20260920-17",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/f3594c4e-2f2d-4c6a-9761-27250309672d.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/f5a0c3ab-2fc7-413f-96af-ee70fcd74c53.mp4"},
+  {id:"new_20260920_18",name:"эртен иштейм …",cost:499,category:"fun",asset:"effect://new-20260920-18",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/72de8450-08de-4e51-9fa2-e89088cfc77b.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/a5171194-046d-4ae5-ab9f-d3070015ef0e.mp4"},
+  {id:"new_20260920_19",name:"эки тантык",cost:499,category:"fun",asset:"effect://new-20260920-19",emoji:"💐✨",epic:true,effect:"video3d",postEffect:"flowers_red",thumb:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/ad2016ef-7721-446a-af37-24659638f8e7.jpg",videoUrl:"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/b1293ed8-8065-4ac8-96b6-b43794887ce3.mp4"},
+  // gifts 2026-09-20 current-chat batch 01-26
+  {"id":"new_20260920c_01","name":"эй тируусунбу?…","cost":499,"category":"fun","asset":"effect://new-20260920c-01","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"flowers_red","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/0f30fe90-5203-4bfe-b519-121f834ea007.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/1abdd289-5613-4027-9a74-9182daf3dfc3.mp4"},
+  {"id":"new_20260920c_02","name":"тууган кунунуз менен","cost":499,"category":"epic","asset":"effect://new-20260920c-02","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"flowers_red","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/97969f7c-efed-4e97-81e2-153fc004eee9.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/3e197a63-a6c2-4785-8ded-89a7d56d40f2.mp4"},
+  {"id":"new_20260920c_03","name":"бул мал эмес диплом","cost":499,"category":"fun","asset":"effect://new-20260920c-03","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"flowers_red","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/8fc5566c-ae0a-4d99-b203-3d49f7cabaf9.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/3c2eeab9-292e-466d-8406-81e6e3876bcf.mp4"},
+  {"id":"new_20260920c_04","name":"стройкада моналитчик…","cost":499,"category":"fun","asset":"effect://new-20260920c-04","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"flowers_red","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/56abacef-1879-4b0b-ab8f-2bd386d8cfe4.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/df7086b7-e02e-4d49-b10c-3463f0930dc5.mp4"},
+  {"id":"new_20260920c_05","name":"эрте турганга кудай берет…","cost":499,"category":"fun","asset":"effect://new-20260920c-05","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"flowers_red","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/eb415462-96cd-49a5-9558-3502eea730b8.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/69cfc97e-ee87-444b-a5e7-54419a824e26.mp4"},
+  {"id":"new_20260920c_06","name":"качан уйлоносун","cost":499,"category":"epic","asset":"effect://new-20260920c-06","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"flowers_red","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/cb5809d7-2501-4fd4-b7e8-728dd97b9162.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/df0208a8-5d2d-4edb-af0d-527ff35aa302.mp4"},
+  {"id":"new_20260920c_07","name":"ким не десе шо десин","cost":499,"category":"fun","asset":"effect://new-20260920c-07","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"flowers_red","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/2a29b5c4-ef28-4e74-a3a9-3518445b92b0.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/510a4afd-7293-4f89-9f61-f8ca256f3d38.mp4"},
+  {"id":"new_20260920c_08","name":"негизи адам деген…","cost":499,"category":"fun","asset":"effect://new-20260920c-08","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"flowers_red","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/824d6e33-295b-4fb0-a08b-490d55eb8395.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/e028ecff-4cff-4df6-b593-37fd25c1933a.mp4"},
+  {"id":"new_20260920c_09","name":"кандай аяалга уйлонуш керек","cost":499,"category":"epic","asset":"effect://new-20260920c-09","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"flowers_red","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/33591c10-b926-439b-b10c-86427354b2f6.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/88d62109-e0a6-44bd-a31b-c4338c266e77.mp4"},
+  {"id":"new_20260920c_10","name":"кемпир…","cost":499,"category":"epic","asset":"effect://new-20260920c-10","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"flowers_red","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/64f30315-b7a4-4c35-b2f6-37e19cab8520.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/bd0ddb19-ed48-41dd-833a-bc1a1da198a0.mp4"},
+  {"id":"new_20260920c_11","name":"жакшы ниет","cost":499,"category":"epic","asset":"effect://new-20260920c-11","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"flowers_red","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/d1f32869-66e9-4a7f-97ec-f9e4f4be1bee.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/5e11982c-4dd3-4c3b-8b3b-7790a4af13da.mp4"},
+  {"id":"new_20260920c_12","name":"азыр…","cost":499,"category":"epic","asset":"effect://new-20260920c-12","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"flowers_red","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/08e33d10-fc0a-4f9f-a78f-7ca09c31b721.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/65b3a8b0-170f-4f9f-b5d8-af3251dc3014.mp4"},
+  {"id":"new_20260920c_13","name":"ата качан келдиниз эле…","cost":499,"category":"epic","asset":"effect://new-20260920c-13","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"flowers_red","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/b2f53a55-2465-4947-8a8d-879ccb06533f.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/3e0e0155-47d1-4720-a546-f51b3504b7d3.mp4"},
+  {"id":"new_20260920c_14","name":"журок…","cost":499,"category":"epic","asset":"effect://new-20260920c-14","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"flowers_red","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/e43ff52b-46b9-426c-9c7f-a026adec7266.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/43252cab-c26b-4347-b955-618003ce3836.mp4"},
+  {"id":"new_20260920c_15","name":"чон курсак…","cost":499,"category":"epic","asset":"effect://new-20260920c-15","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"flowers_red","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/d818a83a-6d07-4aed-a497-cdef0c66bd85.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/85debd0a-9239-4022-ac0d-0358cdcc2d79.mp4"},
+  {"id":"new_20260920c_16","name":"токол алам…","cost":499,"category":"epic","asset":"effect://new-20260920c-16","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"flowers_red","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/188936a3-d172-4b0d-a71e-abfecee8ab9c.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/43804a56-f8bf-4546-aff0-d498a7aa560c.mp4"},
+  {"id":"new_20260920c_17","name":"эгер гулдор суйлосо","cost":499,"category":"epic","asset":"effect://new-20260920c-17","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"flowers_red","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/332a0725-01aa-4cf1-9028-14a20bdea06b.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/bb2d8a39-d16b-47ec-8798-03398313760b.mp4"},
+  {"id":"new_20260920c_18","name":"сагыз love is","cost":499,"category":"epic","asset":"effect://new-20260920c-18","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"flowers_red","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/253ddc3d-6e5f-429d-a8fc-21366599484f.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/83199c2e-2811-4418-b973-ff738dcecbac.mp4"},
+  {"id":"new_20260920c_19","name":"достор…","cost":499,"category":"epic","asset":"effect://new-20260920c-19","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"flowers_red","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/bb774c1d-963b-43c5-b665-adc866bb2d63.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/849d400b-e42a-49b5-ad5c-8323cb48c505.mp4"},
+  {"id":"new_20260920c_20","name":"Кыз узатуу…","cost":499,"category":"epic","asset":"effect://new-20260920c-20","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"flowers_red","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/10fdd0dd-e9bd-42be-9800-05e8d1c1cbaa.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/1e8019e7-1cce-405c-8cec-12c18f1f70f0.mp4"},
+  {"id":"new_20260920c_21","name":"жакын адамын…","cost":499,"category":"epic","asset":"effect://new-20260920c-21","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"flowers_red","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/f5ed7676-b09f-4e97-9cac-6b4f320929e2.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/d0fa9167-4f20-4d84-8c51-2de57ad6973d.mp4"},
+  {"id":"new_20260920c_22","name":"көнул бургула…","cost":499,"category":"epic","asset":"effect://new-20260920c-22","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"flowers_red","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/2e8489f8-1f63-4fa4-97df-7e74ee316fdc.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/3a141cc6-743e-453c-b2c1-8da98b5c12be.mp4"},
+  {"id":"new_20260920c_23","name":"атанын осуяты…","cost":499,"category":"epic","asset":"effect://new-20260920c-23","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"flowers_red","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/a39e508e-1d81-4df9-9be8-eb2ce3cb9425.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/e346a989-1d93-415b-8d25-757aaef5fe8b.mp4"},
+  {"id":"new_20260920c_24","name":"ушул кыздардын кайсынысы келиниз","cost":499,"category":"epic","asset":"effect://new-20260920c-24","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"flowers_red","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/8ed0d19e-5459-45fd-a229-60053ecf6aef.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/91a4a6ec-543c-4f4f-a5f4-7b4a7189725c.mp4"},
+  {"id":"new_20260920c_25","name":"5 катын алам апа","cost":499,"category":"epic","asset":"effect://new-20260920c-25","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"flowers_red","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/78b16508-c94c-4762-9e9a-092cc3f3f8fe.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/27bfe44b-fe42-455e-8e47-8916a841d0d6.mp4"},
+  {"id":"new_20260920c_26","name":"чат жпт","cost":499,"category":"fun","asset":"effect://new-20260920c-26","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"flowers_red","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/f1313b8f-8e1d-4e08-9052-a6f2a9781f87.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/57ef7dee-7d30-4706-a501-5186a99d44a1.mp4"},
+  {"id":"new_20260920d_01","name":"бул сиз учун…","cost":499,"category":"friendly","asset":"effect://new-20260920d-01","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/28715eaa-7403-45a8-9963-d972015b172a.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/a64b786c-3280-41ae-a2b4-ace176cb47fd.mp4"},
+  {"id":"new_20260920d_02","name":"кыздын табияты…","cost":499,"category":"friendly","asset":"effect://new-20260920d-02","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/10eef802-3083-44da-8374-3e8af2f6559e.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/b130139c-aa7a-4074-a29b-43220b27d752.mp4"},
+  {"id":"new_20260920d_03","name":"махабат…","cost":499,"category":"friendly","asset":"effect://new-20260920d-03","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/52911f23-579b-42eb-b1a3-44cc30666527.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/6d7d6f75-9a8f-4f11-9e87-f48b8e35804a.mp4"},
+  {"id":"new_20260920d_04","name":"мойнуна аласынбы?…","cost":499,"category":"popular","asset":"effect://new-20260920d-04","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/4f9702e0-8431-41f5-b41a-ae0394c53f39.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/80d61117-4e22-483f-bfee-3e1705211de8.mp4"},
+  {"id":"new_20260920d_05","name":"сени сүйөм…","cost":499,"category":"friendly","asset":"effect://new-20260920d-05","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/eb6a734f-8fd5-4b9e-9caf-599936c579ca.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/b2e53cf2-f3a2-4212-b665-ec1400316d75.mp4"},
+  {"id":"new_20260920d_06","name":"кечее сени сүйүп…","cost":499,"category":"friendly","asset":"effect://new-20260920d-06","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/c1112168-45fd-4a9b-8fd2-362079cee8e5.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/3442434d-71e3-4952-98e5-cd4b2c097950.mp4"},
+  {"id":"new_20260920d_07","name":"таным атып күнүм батсада…","cost":499,"category":"friendly","asset":"effect://new-20260920d-07","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/7bed04f5-034c-4146-b092-9b57591dd66c.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/fafccddd-ecb4-409a-b290-9fe9095c80ec.mp4"},
+  {"id":"new_20260920d_08","name":"сени тандадым досум…","cost":499,"category":"popular","asset":"effect://new-20260920d-08","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/d071af00-ccbf-4734-be63-368603f09d7a.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/c0095fa0-6f77-4d1c-a972-59638968c4d9.mp4"},
+  {"id":"new_20260920d_09","name":"кечир мени…","cost":499,"category":"friendly","asset":"effect://new-20260920d-09","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/8ddefa2b-5d43-474d-89cf-30bf90a9b913.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/ba137be3-0944-49fa-bd50-9f45e630995d.mp4"},
+  {"id":"new_20260920d_10","name":"айылдан келдинер…","cost":499,"category":"popular","asset":"effect://new-20260920d-10","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/cc696b18-bbd0-4179-b48c-d899663bc732.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/01ac6f4d-2999-47e6-bf49-87782cc3de7f.mp4"},
+  {"id":"new_20260920d_11","name":"космос…","cost":499,"category":"fun","asset":"effect://new-20260920d-11","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/71cdd889-5387-4356-9534-47c4677b73cb.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/21f88e73-4bb1-4f52-bac9-b302d8af8f04.mp4"},
+  {"id":"new_20260920d_12","name":"мазгини тонкойтпочу…","cost":499,"category":"popular","asset":"effect://new-20260920d-12","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/e3b4859f-49b6-4079-911a-f67c6744e0f1.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/6bc63cf9-0afe-4c5b-b5ab-aece49f72bd9.mp4"},
+  {"id":"new_20260920d_13","name":"эмне кыласың аялды…","cost":499,"category":"friendly","asset":"effect://new-20260920d-13","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/b5c40d75-8761-4f84-86a3-7edaea40db97.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/e70fadb8-fc89-43d3-a8b5-5e3640502955.mp4"},
+  {"id":"new_20260920d_14","name":"сага эмне керек деп сурашканда…","cost":499,"category":"popular","asset":"effect://new-20260920d-14","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/56a813b3-ee97-49c1-a09a-704767b4e472.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/4a12d27a-2ebc-4cf9-af1a-1fa151fb5f51.mp4"},
+  {"id":"new_20260920d_15","name":"адат болду ар кун сайын ойлонуу…","cost":499,"category":"friendly","asset":"effect://new-20260920d-15","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/1b1caeee-aae6-468e-9505-7c724b1a6e89.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/6b54774c-6350-44d8-a98f-7156af104f02.mp4"},
+  {"id":"new_20260920d_16","name":"амей энен…","cost":499,"category":"popular","asset":"effect://new-20260920d-16","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/7713d9d5-bcf3-44e3-85dd-846e6db62081.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/c4d7aa2a-e62f-4beb-93a3-860ca9d3f1b5.mp4"},
+  {"id":"new_20260920d_17","name":"Бека…","cost":499,"category":"fun","asset":"effect://new-20260920d-17","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/1852b80d-44ab-4caa-b767-980214513f57.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/dad0ccd6-6cfe-4045-9191-e35f259ab030.mp4"},
+  {"id":"new_20260920d_18","name":"кел текшерип коелу…","cost":499,"category":"fun","asset":"effect://new-20260920d-18","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/dde014e2-1c50-4289-a22f-249f20765055.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/45552eac-88bf-4271-84e0-6a1b361b4e2a.mp4"},
+  {"id":"new_20260920d_19","name":"арманым…","cost":499,"category":"friendly","asset":"effect://new-20260920d-19","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/cbc02901-0bd6-47dd-9638-51eeb87441c0.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/03ebc313-321f-4431-948b-a28523f3ddeb.mp4"},
+  {"id":"new_20260920d_20","name":"көп жигитерди чанба","cost":499,"category":"fun","asset":"effect://new-20260920d-20","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/c2cf9f01-9f7c-4a58-aaf8-d0110803d15a.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/83d8728a-46fc-4888-8312-fccda757bf35.mp4"},
+  {"id":"new_20260920d_21","name":"мына ушу сага окшогон жигитер","cost":499,"category":"epic","asset":"effect://new-20260920d-21","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/fdc0ff4e-a86f-40f5-bd78-5bbea7d19066.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/e7dec496-0889-43ed-993e-54c0446dbcd5.mp4"},
+  {"id":"new_20260920d_22","name":"издейм сени…","cost":499,"category":"friendly","asset":"effect://new-20260920d-22","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/b4b29b67-5148-40eb-b4ad-eaaa53bd2d0e.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/75e66dd1-3651-4b75-aa09-45675f921c0d.mp4"},
+  {"id":"new_20260920d_23","name":"вот так скучаю по тебе…","cost":499,"category":"friendly","asset":"effect://new-20260920d-23","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/3ac6559b-ebb5-4a0f-9cb5-3823697f86a1.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/6f2d827c-3c19-4172-8091-7ebf0ca4843b.mp4"},
+  {"id":"new_20260920d_24","name":"я тебя…","cost":499,"category":"friendly","asset":"effect://new-20260920d-24","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/774767c2-b5a9-4cb0-b058-ee10e16fc046.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/bb3df141-18a3-430f-a46e-eab9350a02ee.mp4"},
+  {"id":"new_20260920d_25","name":"я люблю…","cost":499,"category":"friendly","asset":"effect://new-20260920d-25","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/85e11082-78e6-4a48-b83a-1b984905022b.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/154e3625-6ea5-4edf-8d7c-36f3a4ed08fe.mp4"},
+  {"id":"new_20260920d_26","name":"а я между прочим люблю тебя…","cost":499,"category":"friendly","asset":"effect://new-20260920d-26","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/2ad99ebc-df4a-49de-983f-1edb4010cfcd.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/8b5bfdb4-03e4-412d-9361-f5612cb43e42.mp4"},
+  {"id":"new_20260920d_27","name":"мне от того что….","cost":499,"category":"friendly","asset":"effect://new-20260920d-27","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/284e5fae-420d-483e-b86a-af0d8665ce11.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/2770bb89-139e-4425-a3b7-7f325b3d2852.mp4"},
+  {"id":"new_20260920d_28","name":"среди шумного мира ты моя тишина…","cost":499,"category":"friendly","asset":"effect://new-20260920d-28","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/1a6ae1a5-9c92-4bb8-b463-14e9f887ee1c.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/eddb4f35-979c-4784-9430-12b2ae7251e0.mp4"},
+  {"id":"new_20260920d_29","name":"ты встретиш когда не ждешь…","cost":499,"category":"friendly","asset":"effect://new-20260920d-29","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/5fb4ac0b-e2c1-46e5-9e6c-6fec9f5448ca.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/5d4504b3-a64b-48b3-ba05-60843ffa41e0.mp4"},
+  {"id":"new_20260920d_30","name":"бир озунсун…","cost":499,"category":"friendly","asset":"effect://new-20260920d-30","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/2770f66c-4174-4fad-b3d7-2094042d9d53.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/b7ab4a70-988e-4cdd-b3b9-bbcc516999bf.mp4"},
+  {"id":"new_20260920d_31","name":"ушул жерде күтөм дегенсип…","cost":499,"category":"friendly","asset":"effect://new-20260920d-31","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/93e7f2c9-69e8-4900-803c-3942a0c0fe9e.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/d1822bcf-7ae5-4dd3-b792-d2fbe6325744.mp4"},
+  {"id":"new_20260920d_32","name":"…","cost":499,"category":"friendly","asset":"effect://new-20260920d-32","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/f152168a-016b-418d-a9e4-529ba28e8436.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/a1c178eb-fd6d-4a49-99ff-b7fc09d85708.mp4"},
+  {"id":"new_20260920d_33","name":"❤️…","cost":499,"category":"friendly","asset":"effect://new-20260920d-33","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/1d963d4f-81a7-4a81-876a-da782a8b6290.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/e75bb8c0-3981-4d8e-a223-585d0af621e2.mp4"},
+  {"id":"new_20260920d_34","name":"я тебя люблю…","cost":499,"category":"friendly","asset":"effect://new-20260920d-34","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/e13e3442-a326-421c-b8fa-a63507a9c5de.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/991945a4-0390-4d28-8083-000ca0ea946b.mp4"},
+  {"id":"new_20260920d_35","name":"❤️❤️…","cost":499,"category":"friendly","asset":"effect://new-20260920d-35","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/25b12806-c1ef-4336-8421-9e8508d74858.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/97723263-ef87-4db3-b9cd-eff1adeec9fe.mp4"},
+  {"id":"new_20260920d_36","name":"your love is my strength…","cost":499,"category":"friendly","asset":"effect://new-20260920d-36","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/acac1203-5c02-4fb4-a54d-97edcf205fde.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/4a232061-0ece-493a-b1ca-879c6b2c93f5.mp4"},
+  {"id":"new_20260920d_37","name":"мило…","cost":499,"category":"friendly","asset":"effect://new-20260920d-37","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/91028e82-26ab-4f9d-8cab-34880358e86d.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/8844a592-54ff-4ed3-aec9-52cfd1420b3e.mp4"},
+  {"id":"new_20260920d_38","name":"🌹…","cost":499,"category":"friendly","asset":"effect://new-20260920d-38","emoji":"💐✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/c94b3469-7477-4b90-86c0-86b550e2ba4e.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/c1bb797f-0d6c-4978-99e8-30f06b09109f.mp4"},
+];
+const GIFT_EMOJI=Object.fromEntries(FALLBACK_GIFTS.map(g=>[g.id,g.emoji]));
+const YT_CATALOG=[{id:'fHI8X4OXluQ',title:'The Weeknd — Blinding Lights',duration:'04:22'},{id:'TUVcZfQe-Kw',title:'Dua Lipa — Levitating',duration:'03:51'},{id:'JGwWNGJdvx8',title:'Ed Sheeran — Shape of You',duration:'04:24'},{id:'7wtfhZwyrcc',title:'Imagine Dragons — Believer',duration:'03:37'},{id:'U3ASj1L6_sY',title:'Adele — Easy On Me',duration:'05:31'},{id:'hT_nvWreIhg',title:'OneRepublic — Counting Stars',duration:'04:44'},{id:'pRpeEdMmmQ0',title:'Shakira — Waka Waka',duration:'03:31'},{id:'QtXby3twMmI',title:'Coldplay — Adventure of a Lifetime',duration:'05:16'},{id:'OPf0YbXqDm0',title:'Mark Ronson ft. Bruno Mars — Uptown Funk',duration:'04:30'},{id:'CevxZvSJLk8',title:'Katy Perry — Roar',duration:'04:30'}];
+const I18N={ru:{spin:'Крутить',need:'Нужен ещё один игрок',your:'Ваш ход',turn:'Ход: {name}',pick:'Бутылочка выбрала {name}',msg:'Написать сообщение',gift:'Выберите игрока',unlock:'Подарок отправлен',voice:'Сначала включите Premium',room:'Комната готова',video:'добавил(а) видео',spinResult:'бутылочка выбрала',balcony:'Балкон',guests:'Гости',balconyMode:'Вы на балконе — пишите в чат и отправляйте подарки гостям',translation:'Показать перевод',demo:'Демо-профиль',self:'Это вы',sendGift:'Отправить подарок',playerVideo:'Видео {name}',noVideo:'У игрока пока нет видео',watching:'YouTube открыт',addToProfile:'Поставить в профиль'},ky:{spin:'Айлантуу',need:'Дагы бир оюнчу керек',your:'Сиздин кезек',turn:'Кезек: {name}',pick:'Бөтөлкө {name} тандады',msg:'Билдирүү жазыңыз',gift:'Оюнчуну тандаңыз',unlock:'Белек жөнөтүлдү',voice:'Адегенде Premium күйгүзүңүз',room:'Бөлмө даяр',video:'видео кошту',spinResult:'бөтөлкө тандады',balcony:'Балкон',guests:'Коноктор',balconyMode:'Сиз балкондосуз — чатка жазыңыз жана конокторго белек жөнөтүңүз',translation:'Котормону көрсөтүү',demo:'Демо профиль',self:'Бул сиз',sendGift:'Белек жөнөтүү',playerVideo:'{name} видеосу',noVideo:'Бул оюнчуда азырынча видео жок',watching:'YouTube ачылды',addToProfile:'Профилге кошуу'},kk:{spin:'Айналдыру',need:'Тағы бір ойыншы керек',your:'Сіздің кезегіңіз',turn:'Кезек: {name}',pick:'Бөтелке {name} таңдады',msg:'Хабарлама жазыңыз',gift:'Ойыншыны таңдаңыз',unlock:'Сыйлық жіберілді',voice:'Алдымен Premium қосыңыз',room:'Бөлме дайын',video:'видео қосты',spinResult:'бөтелке таңдады',balcony:'Балкон',guests:'Қонақтар',balconyMode:'Сіз балкондасыз — чатқа жазыңыз және қонақтарға сыйлық жіберіңіз',translation:'Аударманы көрсету',demo:'Демо профиль',self:'Бұл сіз',sendGift:'Сыйлық жіберу',playerVideo:'{name} видеосы',noVideo:'Бұл ойыншыда әзірге видео жоқ',watching:'YouTube ашылды',addToProfile:'Профильге қосу'},uz:{spin:'Aylantirish',need:'Yana bir o‘yinchi kerak',your:'Sizning navbatingiz',turn:'Navbat: {name}',pick:'Shisha {name}ni tanladi',msg:'Xabar yozing',gift:'O‘yinchini tanlang',unlock:'Sovg‘a yuborildi',voice:'Avval Premium ni yoqing',room:'Xona tayyor',video:'video qo‘shdi',spinResult:'shisha tanladi',balcony:'Balkon',guests:'Mehmonlar',balconyMode:'Siz balkondasiz — chat yozing va mehmonlarga sovg‘a yuboring',translation:'Tarjimani ko‘rsatish',demo:'Demo profil',self:'Bu siz',sendGift:'Sovg‘a yuborish',playerVideo:'{name} videosi',noVideo:'Bu o‘yinchida hozircha video yo‘q',watching:'YouTube ochildi',addToProfile:'Profilga qo‘shish'},en:{spin:'Spin',need:'One more player needed',your:'Your turn',turn:'Turn: {name}',pick:'The bottle picked {name}',msg:'Write a message',gift:'Choose a player',unlock:'Gift sent',voice:'Enable Premium first',room:'Room ready',video:'added a video',spinResult:'the bottle picked',balcony:'Balcony',guests:'Guests',balconyMode:'You are on the balcony — chat and send gifts to guests',translation:'Show translation',demo:'Demo profile',self:'This is you',sendGift:'Send a gift',playerVideo:'{name} video',noVideo:'This player has no video yet',watching:'YouTube opened',addToProfile:'Add to profile'}};
+const $=s=>document.querySelector(s),qp=new URLSearchParams(location.search),room=(qp.get('room')||'main').replace(/[^A-Za-z0-9_-]/g,'').slice(0,64)||'main';
+const playerId=localStorage.getItem('kissmeet.pid')||crypto.randomUUID().slice(0,10);localStorage.setItem('kissmeet.pid',playerId);
+let lang=localStorage.getItem('kissmeet.lang')||'ru',socket,lastMsg,selectedTarget=null,selectedDemo=null,selectedPlayer=null,selectedSlot=null,selectedGiftId=null,giftCategory='popular',giftEventCursor=null,premium=localStorage.getItem('kissmeet.premium')==='1',recorder,chunks=[],demoAngle=0,demoSpinning=false;
+const machoSpitPlayers=new Set();if(!I18N[lang])lang='ru';const roomLabel=room==='main'?'118':room.slice(-4);
+const tr=(k,v={})=>{let s=(I18N[lang]||I18N.ru)[k]||k;for(const[a,b]of Object.entries(v))s=s.replace(`{${a}}`,b);return s};
+function esc(s){return String(s).replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]||c))}function toast(x){const e=$('#toast');e.textContent=x;e.classList.add('show');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('show'),1800)}function send(action){if(socket?.readyState===1)socket.send(JSON.stringify({type:'action',action}))}function profile(id){return lastMsg?.view?.profiles?.[id]||{name:id}}function nameOf(id){return profile(id).name||id}function initials(s){return String(s).split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase()}function hashString(s){let h=0;for(const ch of String(s))h=(h*31+ch.charCodeAt(0))>>>0;return h}function photoFor(id,i=0){return`https://i.pravatar.cc/300?img=${((hashString(id)+i*7)%60)+1}`}
+// The public link is the playable demo by default. Server room state can contain
+// stale/ghost seats from earlier test sessions, so it must not decide whether the
+// demo UI is active. Add ?live=1 later when the real multiplayer room is ready.
+const DEMO_PREVIEW=qp.get('live')!=='1';
+function readTableSettings(id=room){
+  try{
+    const raw=localStorage.getItem('kissmeet.table.settings.'+id);
+    if(!raw)return null;
+    const x=JSON.parse(raw);
+    const maxPlayers=Math.max(2,Math.min(11,Number(x.maxPlayers)||6));
+    return {...x,maxPlayers,number:String(x.number||String(id).replace(/^table-/,'')||'165')};
+  }catch{return null}
 }
-
-const PING = "__ping";
-const PONG = "__pong";
-
-let socket = null;
-let retry = 0;
-
-function connect() {
-  const proto = location.protocol === "https:" ? "wss:" : "ws:";
-  socket = new WebSocket(`${proto}//${location.host}/ws/${encodeURIComponent(room)}`);
-
-  socket.addEventListener("open", () => {
-    retry = 0;
-    setStatus("connected");
-    send({ type: "join", playerId: playerId() });
+const CREATED_TABLE=readTableSettings(room);
+const CUSTOM_BG_COST=20;
+function getHeartBalance(){
+  const key='kissmeet.hearts';
+  const saved=Number(localStorage.getItem(key));
+  if(Number.isFinite(saved)&&saved>=0)return Math.floor(saved);
+  const initial=DEMO_PREVIEW?100:0;
+  localStorage.setItem(key,String(initial));
+  return initial;
+}
+function setHeartBalance(v){
+  const n=Math.max(0,Math.floor(Number(v)||0));
+  localStorage.setItem('kissmeet.hearts',String(n));
+  const el=document.querySelector('#heartBalance');if(el)el.textContent=String(n);
+  return n;
+}
+function syncHeartBalance(){setHeartBalance(getHeartBalance())}
+if(DEMO_PREVIEW&&localStorage.getItem('kissmeet.demoGiftBalanceV4')!=='1'){if(getHeartBalance()<5000)setHeartBalance(5000);localStorage.setItem('kissmeet.demoGiftBalanceV4','1')}
+const THEME_OPTIONS=[
+  {id:'dark',label:'Тёмная',img:'https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=1000&q=86',bg:'linear-gradient(180deg,rgba(1,5,12,.30),rgba(1,5,12,.78)),url(https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=1200&q=86) center/cover'},
+  {id:'city',label:'Город',img:'https://images.unsplash.com/photo-1514565131-fce0801e5785?auto=format&fit=crop&w=1000&q=86',bg:'linear-gradient(180deg,rgba(8,12,20,.25),rgba(7,10,18,.58)),url(https://images.unsplash.com/photo-1514565131-fce0801e5785?auto=format&fit=crop&w=1200&q=86) center/cover'},
+  {id:'beach',label:'Пляж',img:'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1000&q=86',bg:'linear-gradient(180deg,rgba(7,20,30,.12),rgba(6,10,18,.34)),url(https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=86) center/cover'},
+  {id:'forest',label:'Лес',img:'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1000&q=86',bg:'linear-gradient(180deg,rgba(5,18,10,.12),rgba(5,14,10,.50)),url(https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1200&q=86) center/cover'},
+  {id:'romance',label:'Романтика',img:'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1000&q=86',bg:'linear-gradient(180deg,rgba(68,8,38,.18),rgba(35,5,27,.56)),url(https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1200&q=86) center/cover'}
+];
+const ROMANTIC_PLACES=[
+  {id:'bishkek-sunset',label:'Бишкек • Закат',img:'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1000&q=85'},
+  {id:'issyk-kul',label:'Иссык-Куль',img:'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1000&q=85'},
+  {id:'samarkand-night',label:'Самарканд',img:'https://images.unsplash.com/photo-1591604466107-ec97de577aff?auto=format&fit=crop&w=1000&q=85'},
+  {id:'tashkent-evening',label:'Ташкент',img:'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&w=1000&q=85'},
+  {id:'almaty-mountains',label:'Алматы • Горы',img:'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1000&q=85'},
+  {id:'astana-night',label:'Астана • Ночь',img:'https://images.unsplash.com/photo-1514565131-fce0801e5785?auto=format&fit=crop&w=1000&q=85'},
+  {id:'nyc-rooftop',label:'Нью-Йорк • Ночь',img:'https://images.unsplash.com/photo-1518391846015-55a9cc003b25?auto=format&fit=crop&w=1000&q=85'},
+  {id:'chicago-river',label:'Чикаго • Огни',img:'https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1000&q=85'},
+  {id:'london-rain',label:'Лондон • Вечер',img:'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=1000&q=85'},
+  {id:'paris-eiffel',label:'Париж • Эйфель',img:'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1000&q=85'},
+  {id:'paris-seine',label:'Париж • Сена',img:'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?auto=format&fit=crop&w=1000&q=85'},
+  {id:'rome-evening',label:'Рим • Вечер',img:'https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=1000&q=85'},
+  {id:'venice-canal',label:'Венеция • Каналы',img:'https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?auto=format&fit=crop&w=1000&q=85'},
+  {id:'istanbul-bosphorus',label:'Стамбул • Босфор',img:'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=1000&q=85'},
+  {id:'cappadocia',label:'Каппадокия',img:'https://images.unsplash.com/photo-1528181304800-259b08848526?auto=format&fit=crop&w=1000&q=85'},
+  {id:'santorini',label:'Санторини • Закат',img:'https://images.unsplash.com/photo-1504512485720-7d83a16ee930?auto=format&fit=crop&w=1000&q=85'},
+  {id:'athens-night',label:'Афины • Ночь',img:'https://images.unsplash.com/photo-1555993539-1732b0258235?auto=format&fit=crop&w=1000&q=85'},
+  {id:'moscow-night',label:'Москва • Ночь',img:'https://images.unsplash.com/photo-1513326738677-b964603b136d?auto=format&fit=crop&w=1000&q=85'},
+  {id:'spb-white-nights',label:'Петербург • Ночь',img:'https://images.unsplash.com/photo-1556610961-2fecc5927173?auto=format&fit=crop&w=1000&q=85'},
+  {id:'lake-romance',label:'Озеро • Романтика',img:'https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=1000&q=85'},
+  {id:'beach-sunset',label:'Пляж • Закат',img:'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1000&q=85'},
+  {id:'forest-lights',label:'Лес • Туман',img:'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1000&q=85'},
+  {id:'city-lights',label:'Городские огни',img:'https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=1000&q=85'},
+  {id:'rooftop-date',label:'Романтический rooftop',img:'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=1000&q=85'}
+];
+function applyCustomTheme(dataUrl){
+  if(!dataUrl)return;
+  const game=document.querySelector('.game'),table=document.querySelector('.table'),video=document.querySelector('#themeVideoBg');
+  game?.setAttribute('data-theme','custom');document.documentElement.setAttribute('data-game-theme','custom');
+  table?.style.setProperty('background',`linear-gradient(180deg,rgba(4,8,14,.18),rgba(4,8,14,.52)),url(${dataUrl}) center/cover`,'important');
+  if(video){video.pause();video.classList.add('hidden')}
+  localStorage.setItem('kissmeet.theme','custom');localStorage.removeItem('kissmeet.place');
+}
+function resizeBackgroundFile(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onerror=reject;
+    reader.onload=()=>{
+      const img=new Image();
+      img.onerror=reject;
+      img.onload=()=>{
+        const maxW=1280,maxH=1600,scale=Math.min(1,maxW/img.width,maxH/img.height);
+        const w=Math.max(1,Math.round(img.width*scale)),h=Math.max(1,Math.round(img.height*scale));
+        const c=document.createElement('canvas');c.width=w;c.height=h;
+        c.getContext('2d').drawImage(img,0,0,w,h);
+        resolve(c.toDataURL('image/jpeg',.82));
+      };
+      img.src=reader.result;
+    };
+    reader.readAsDataURL(file);
   });
+}
+async function chooseCustomBackground(file){
+  if(!file)return;
+  if(!file.type.startsWith('image/')){toast('Выберите фотографию');return}
+  const balance=getHeartBalance();
+  if(balance<CUSTOM_BG_COST){toast(`Нужно ${CUSTOM_BG_COST} ♥`);return}
+  try{
+    const dataUrl=await resizeBackgroundFile(file);
+    localStorage.setItem('kissmeet.customBg',dataUrl);
+    setHeartBalance(balance-CUSTOM_BG_COST);
+    applyCustomTheme(dataUrl);
+    closeThemePicker();
+    toast(`Свой фон установлен · −${CUSTOM_BG_COST} ♥`);
+  }catch{toast('Не удалось открыть фотографию')}
+}
+function applyPlaceTheme(place){
+  const game=document.querySelector('.game'),table=document.querySelector('.table'),video=document.querySelector('#themeVideoBg');
+  game?.setAttribute('data-theme','city');document.documentElement.setAttribute('data-game-theme','city');
+  table?.style.setProperty('background',`linear-gradient(180deg,rgba(5,10,18,.22),rgba(5,8,14,.58)),url(${place.img}) center/cover`,'important');
+  if(video){video.pause();video.classList.add('hidden')}
+  localStorage.setItem('kissmeet.theme','city');localStorage.setItem('kissmeet.place',place.id);
+  document.querySelectorAll('[data-theme-id]').forEach(b=>b.classList.toggle('active',b.dataset.themeId==='city'));
+}
+function renderRomanticPlaces(){
+  const box=document.querySelector('#placeGallery');if(!box)return;
+  const rows=[ROMANTIC_PLACES.slice(0,12),ROMANTIC_PLACES.slice(12)];
+  box.innerHTML=rows.map((row,i)=>`<div class="placeRow" data-place-row="${i}">${row.map(p=>`<button type="button" class="placeCard" data-place-id="${p.id}"><span class="placePhoto" style="background-image:linear-gradient(180deg,transparent 45%,rgba(0,0,0,.62)),url(${p.img})"></span><span class="placeLabel">${p.label}</span></button>`).join('')}</div>`).join('');
+  box.onclick=e=>{const b=e.target.closest('[data-place-id]');if(!b)return;const p=ROMANTIC_PLACES.find(x=>x.id===b.dataset.placeId);if(p){applyPlaceTheme(p);closeThemePicker()}};
+}
+function applyTheme(id){
+  const t=THEME_OPTIONS.find(x=>x.id===id)||THEME_OPTIONS[0];
+  const game=document.querySelector('.game');
+  const table=document.querySelector('.table');
+  const video=document.querySelector('#themeVideoBg');
+  game?.setAttribute('data-theme',t.id);
+  document.documentElement.setAttribute('data-game-theme',t.id);
+  if(video){video.pause();video.classList.add('hidden');video.removeAttribute('src');video.load()}
+  if(t.video){
+    table?.style.removeProperty('background');
+    if(video){video.src=t.video;video.classList.remove('hidden');video.muted=true;video.loop=true;video.playsInline=true;video.autoplay=true;video.load();setTimeout(()=>video.play().catch(()=>{}),0)}
+  }else{
+    table?.style.setProperty('background',t.bg,'important');
+  }
+  localStorage.setItem('kissmeet.theme',t.id);
+  document.querySelectorAll('[data-theme-id]').forEach(b=>b.classList.toggle('active',b.dataset.themeId===t.id));
+}
+function renderThemeRoot(){
+  const title=document.querySelector('#themeTitle');
+  const back=document.querySelector('#themeBack');
+  const grid=document.querySelector('#themeGrid');
+  const gallery=document.querySelector('#placeGallery');
+  if(title)title.textContent='Выбери тему фона';
+  if(back){back.classList.add('hidden');back.dataset.level='root'}
+  if(grid){
+    grid.innerHTML='';
+    grid.classList.add('hidden');
+  }
+  if(gallery){
+    const themePlaces=THEME_OPTIONS.map(t=>({id:`theme-${t.id}`,label:t.label,img:t.img,themeId:t.id}));
+    const combined=[...themePlaces,...ROMANTIC_PLACES];
+    const rows=[combined.filter((_,i)=>i%2===0),combined.filter((_,i)=>i%2===1)];
+    gallery.innerHTML=rows.map((row,i)=>`<div class="placeRow" data-place-row="${i}">${row.map(p=>`<button type="button" class="placeCard" data-place-id="${p.id}" ${p.themeId?`data-theme-pick="${p.themeId}"`:''}><span class="placePhoto" style="background-image:linear-gradient(180deg,transparent 45%,rgba(0,0,0,.62)),url(${p.img})"></span><span class="placeLabel">${p.label}</span></button>`).join('')}</div>`).join('');
+    gallery.onclick=e=>{
+      const b=e.target.closest('[data-place-id]');if(!b)return;
+      const themeId=b.dataset.themePick;
+      if(themeId){applyTheme(themeId);closeThemePicker();return}
+      const p=ROMANTIC_PLACES.find(x=>x.id===b.dataset.placeId);
+      if(p){applyPlaceTheme(p);closeThemePicker()}
+    };
+  }
+}
+function openThemePicker(){
+  renderThemeRoot();
+  const picker=document.querySelector('#themePicker');
+  const chat=document.querySelector('#chatArea');
+  if(picker&&chat&&picker.parentElement!==chat)chat.appendChild(picker);
+  picker?.classList.remove('hidden');
+}
+function closeThemePicker(){document.querySelector('#themePicker')?.classList.add('hidden')}
 
-  socket.addEventListener("message", (event) => {
-    // The server answers keepalives without waking the room; ignore them.
-    if (event.data === PONG) return;
-    let msg;
-    try {
-      msg = JSON.parse(event.data);
-    } catch {
-      return;
+function isDemoMode(m=lastMsg){
+  if(DEMO_PREVIEW)return true;
+  if(!m?.view)return true;
+  const seats=Array.isArray(m.seats)?m.seats:[];
+  const players=Array.isArray(m.view.players)?m.view.players:[];
+  return !seats.includes(playerId) || players.length<2;
+}
+function connect(){
+  const u=new URL(`/ws/${room}`,'https://kiss-meet-club.higgsfield.app');u.protocol='wss:';socket=new WebSocket(u);
+  socket.onopen=()=>socket.send(JSON.stringify({type:'join',playerId}));
+  socket.onmessage=e=>{
+    if(e.data==='__pong')return;
+    const m=JSON.parse(e.data);
+    if(m.type==='state'){const first=!lastMsg;lastMsg=m;render(m);processGiftEvents(m.view,first);return}
+    if(m.type==='error'){
+      if(isDemoMode()&&['wait for your turn','need another player','balcony cannot spin','game is not in progress'].includes(m.error))return;
+      toast(m.error);
     }
-    if (msg.type === "state") render(msg);
-    else if (msg.type === "error") setStatus(msg.error, true);
+  };
+  socket.onclose=()=>setTimeout(connect,1200);
+}
+connect();setInterval(()=>socket?.readyState===1&&socket.send('__ping'),30000);
+
+function demoRoster(){
+  const selfPhoto=DEMO[7]?.photo||DEMO[0]?.photo||'';
+  const self={id:playerId,name:'Player 1',photo:selfPhoto,gift:'',badge:0,real:true,self:true,turn:false,target:false};
+  const others=DEMO.slice(0,10).map((d,i)=>({...d,id:`demo-${i}`,real:false,self:false,turn:false,target:false}));
+  return [self,...others].slice(0,11);
+}
+function realRoster(v){
+  return v.players.slice(0,11).map((id,i)=>({id,name:nameOf(id),photo:photoFor(id,i),gift:profile(id).lastGift==='kolunan_emne_kelet'?'':GIFT_EMOJI[profile(id).lastGift]||'',badge:profile(id).gifts||0,real:true,self:id===playerId,turn:v.turn===id,target:v.target===id}));
+}
+function render(m){
+  const v=m.view;if(!v)return;
+  const created=readTableSettings(room);
+  const demoMode=!created&&isDemoMode(m);
+  if(!demoMode&&!created){const hb=Number(v.profiles?.[playerId]?.hearts);if(Number.isFinite(hb))$('#heartBalance').textContent=String(hb)}
+  renderPlayers(v,demoMode,created);
+  if(created){
+    const feed=$('#feed');if(feed)feed.innerHTML='<div class="createdTableWelcome">Стол #'+esc(created.number)+' создан · мест: '+created.maxPlayers+'</div>';
+    const media=$('#mediaBox');media?.classList.add('hidden');$('#chatArea')?.classList.remove('mediaActive');
+  }else{renderFeed(v);renderMedia(v)}
+  const guest=created?true:(demoMode||m.seats.includes(playerId)||v.players.includes(playerId));
+  const ownerCount=created&&created.owner===playerId?1:0;
+  const gc=$('#guestCount');if(gc)gc.textContent=created?`${ownerCount}/${created.maxPlayers}`:`${demoMode?1:(m.seats?.length||0)}/11`;
+  const lc=$('#liveCount');if(lc)lc.textContent=created?Math.max(1,ownerCount):Math.max(1,Number(m.connected||1));
+  if(!demoSpinning){demoAngle=v.bottleAngle||demoAngle;$('#bottle').style.transform=`rotate(${demoAngle}deg)`}
+  $('#spin').disabled=created?true:(demoMode?false:(m.status!=='playing'||!guest||v.turn!==playerId));
+  if(created)$('#turnText').textContent='Ждём игроков · '+ownerCount+'/'+created.maxPlayers;else $('#turnText').textContent=demoMode?'Демо — крутите сердце':(!guest?tr('balconyMode'):(v.target?tr('pick',{name:nameOf(v.target)}):(v.turn===playerId?tr('your'):tr('turn',{name:nameOf(v.turn)}))));
+  const stats=$('.roomStats');if(stats&&created)stats.innerHTML='<span class="createdTableStat">Стол <strong>#'+esc(created.number)+'</strong></span><span class="createdTableStat">Игроки <strong>'+ownerCount+'/'+created.maxPlayers+'</strong></span>';
+}
+function renderPlayers(v,demoMode=isDemoMode(),created=readTableSettings(room)){
+  const box=$('#players');box.innerHTML='';
+  if(created){renderCreatedTablePlayers(box,created);return}
+  const all=demoMode?demoRoster():realRoster(v);
+  all.forEach((p,i)=>{
+    const [x,y]=POS[i],b=document.createElement('button');
+    b.type='button';b.dataset.slot=String(i);b.dataset.playerId=p.id||`demo-${i}`;
+    b.className=`person ${p.real?'real':'demo'} ${p.self?'self':''} ${p.turn?'turn':''} ${p.target?'target':''}`;
+    b.style.left=x+'%';b.style.top=y+'%';
+    b.innerHTML=`<div class="photo"><span>${initials(p.name)}</span><img src="${p.photo}" alt="">${p.badge?`<i class="badge">${p.badge}</i>`:''}${i<3?'<i class="hat">🎉</i>':''}${p.gift?`<i class="giftCorner">${p.gift}</i>`:''}</div><div class="name">${esc(p.name)}</div>`;
+    b.querySelector('img')?.addEventListener('error',e=>e.currentTarget.remove());
+    let tapTimer=null;b.onclick=()=>{clearTimeout(tapTimer);tapTimer=setTimeout(()=>openPlayerSheet(p,i),210)};b.ondblclick=(e)=>{e.preventDefault();clearTimeout(tapTimer);openPlayerProfile(p,i)};box.appendChild(b);restoreKolunanSticker(b.querySelector('.photo'),p.id||`demo-${i}`);
   });
-
-  socket.addEventListener("close", () => {
-    // Exponential backoff, capped: a room that is briefly unreachable should not
-    // get hammered by every open tab.
-    retry = Math.min(retry + 1, 6);
-    const wait = 500 * 2 ** (retry - 1);
-    setStatus(`disconnected — retrying in ${Math.round(wait / 1000)}s`, true);
-    setTimeout(connect, wait);
-  });
+  if(typeof rehideHeartDuelSources==='function')rehideHeartDuelSources();
 }
-
-function send(msg) {
-  if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(msg));
-}
-
-// Keep the socket warm through idle periods (the server auto-answers these).
-setInterval(() => {
-  if (socket?.readyState === WebSocket.OPEN) socket.send(PING);
-}, 30_000);
-
-// ── view (rewrite this for your game) ─────────────────────────────────────
-
-const boardEl = document.querySelector("#board");
-const statusEl = document.querySelector("#status");
-const metaEl = document.querySelector("#meta");
-
-function setStatus(text, isError = false) {
-  statusEl.textContent = text;
-  statusEl.classList.toggle("error", isError);
-}
-
-function render(msg) {
-  const { status, view, result, meta, connected, seats } = msg;
-  metaEl.textContent = `${meta.game} · room “${room}” · ${connected} connected · ${seats.length}/${meta.maxPlayers} seated`;
-
-  if (status === "waiting") {
-    setStatus(`waiting for players (${seats.length}/${meta.minPlayers})`);
-  } else if (status === "over") {
-    setStatus(result?.draw ? "draw" : result?.winner === view?.yourMark ? "you win" : "game over");
-  } else {
-    setStatus(view?.yourTurn ? "your turn" : "opponent's turn");
+function renderCreatedTablePlayers(box,settings){
+  const max=Math.max(2,Math.min(11,Number(settings.maxPlayers)||6));
+  const ownerHere=settings.owner===playerId;
+  const ownerName=localStorage.getItem('kissmeet.profile.name')||'Player 1';
+  const ownerPhoto=localStorage.getItem('kissmeet.profile.main')||DEMO[7]?.photo||DEMO[0]?.photo||photoFor(playerId,1);
+  for(let i=0;i<max;i++){
+    const [x,y]=POS[i],b=document.createElement('button');
+    b.type='button';b.className='person createdSeat '+(i===0&&ownerHere?'createdOwner':'emptySeat');b.style.left=x+'%';b.style.top=y+'%';
+    if(i===0&&ownerHere){
+      b.dataset.playerId=playerId;
+      b.innerHTML='<div class="photo"><span>'+initials(ownerName)+'</span><img src="'+esc(ownerPhoto)+'" alt=""><i class="ownerBadge">Хозяин</i></div><div class="name">'+esc(ownerName)+'</div>';
+      b.onclick=()=>openPlayerProfile({id:playerId,name:ownerName,photo:ownerPhoto,badge:0,real:true,self:true},0);
+    }else{
+      b.disabled=true;b.innerHTML='<div class="photo emptySeatPhoto"><span>+</span></div><div class="name emptySeatName">Свободно</div>';
+    }
+    box.appendChild(b);
   }
-
-  boardEl.innerHTML = "";
-  const cells = view?.board ?? Array(9).fill(null);
-  cells.forEach((mark, i) => {
-    const cell = document.createElement("button");
-    // textContent, never innerHTML: server data is never treated as markup.
-    cell.textContent = mark ?? "";
-    cell.className = "cell";
-    cell.disabled = Boolean(mark) || status !== "playing" || !view?.yourTurn;
-    cell.addEventListener("click", () => send({ type: "action", action: { cell: i } }));
-    boardEl.append(cell);
-  });
-
-  const won = result?.line ?? [];
-  for (const i of won) boardEl.children[i]?.classList.add("win");
+}
+function showDogPeeGift(){return}
+function applyMachoSpit(){return}
+function clearMachoSpit(){return}
+function restoreMachoSpit(){return}
+function renderFeed(v){const box=$('#feed');box.innerHTML='';for(const e of v.feed){const row=document.createElement('div'),nm=e.from==='system'?'K&M':nameOf(e.from),to=e.to?nameOf(e.to):'';row.className='event';let html='';if(e.kind==='chat')html=`${esc(e.text)}<div class="line2">${tr('translation')}</div>`;else if(e.kind==='gift'){const g=e.emoji||GIFT_EMOJI[e.gift]||'🎁';html=`<div class="giftline">${g} ×1 <span>→ ${esc(to)}</span></div>`}else if(e.kind==='spin')html=`${tr('spinResult')} <b>${esc(to)}</b>`;else if(e.kind==='video')html=tr('video');else if(e.kind==='voice')html=`🎙 <audio controls preload="none" src="${esc(e.url)}"></audio>`;else if(e.kind==='topup')html='пополнил баланс ♥';else html=tr('room');row.innerHTML=`<div class="miniavatar">${initials(nm)}</div><div class="bubble"><b>${esc(nm)}</b>: ${html}</div>`;box.appendChild(row)}if(v.feed.length<4)box.insertAdjacentHTML('beforeend',`<div class="event"><div class="miniavatar">A</div><div class="bubble"><b>Айдана</b>: Салам 👋<div class="line2">${tr('translation')}</div></div></div><div class="event"><div class="miniavatar">B</div><div class="bubble"><div class="giftline">🌹 ×3 <span>→ Айдана</span></div></div></div>`)}
+function youtubeEmbed(url){try{const u=new URL(url);let id='';if(u.hostname.includes('youtu.be'))id=u.pathname.slice(1);else if(u.hostname.includes('youtube.com'))id=u.searchParams.get('v')||u.pathname.split('/').filter(Boolean).pop();id=(id||'').split(/[?&#]/)[0];return /^[A-Za-z0-9_-]{6,20}$/.test(id)?`https://www.youtube.com/embed/${encodeURIComponent(id)}?playsinline=1&autoplay=1&rel=0`:''}catch{return''}}function shortName(name){return String(name||'Игрок').split(',')[0].trim()}function showMedia(m,title='Видео'){if(!m)return false;$('#mediaBox').classList.remove('hidden');$('#chatArea').classList.add('mediaActive');$('#mediaTitle').textContent=title;if(m.kind==='youtube'){const src=youtubeEmbed(m.url);if(!src)return false;$('#videoFrame').innerHTML=`<iframe src="${src}" allow="accelerometer; autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`}else $('#videoFrame').innerHTML=`<video src="${esc(m.url)}" controls autoplay playsinline></video>`;return true}function renderMedia(v){const owner=v.target&&v.media[v.target]?v.target:(v.media[playerId]?playerId:Object.keys(v.media)[0]);if(!owner)return;if($('#mediaBox').classList.contains('hidden'))return;showMedia(v.media[owner],tr('playerVideo',{name:shortName(nameOf(owner))}))}
+function giftCatalog(){const blocked=new Set(['popular','friendly','fun','luxury','epic','style','food']);const raw=Array.isArray(lastMsg?.view?.giftCatalog)&&lastMsg.view.giftCatalog.length?lastMsg.view.giftCatalog:FALLBACK_GIFTS;const source=raw.filter(g=>!blocked.has(g?.category)||String(g?.id||'').startsWith('batch_')||String(g?.id||'').startsWith('new_'));const pinned=FALLBACK_GIFTS.filter(g=>['suzana','lion','kyrgyz_warrior','aurakg','bauri_vip'].includes(g.id)||String(g.id||'').startsWith('batch_')||String(g.id||'').startsWith('new_'));const s=Object.fromEntries(pinned.map(g=>[g.id,g]));const list=source.map(g=>s[g.id]?{...g,...s[g.id]}:g);for(const id of Object.keys(s))if(s[id]&&!list.some(g=>g.id===id))list.push(s[id]);list.sort((a,b)=>Number(String(b?.id||'').startsWith('new_'))-Number(String(a?.id||'').startsWith('new_')));const suzana=list.find(g=>g.id==='suzana');return suzana?[suzana,...list.filter(g=>g.id!=='suzana')]:list}
+function currentGiftBalance(){if(isDemoMode())return getHeartBalance();const n=Number(profile(playerId).hearts);return Number.isFinite(n)?n:0}
+function updateGiftBalance(){const b=currentGiftBalance();$('#giftBalance').textContent=String(b);if(!isDemoMode())$('#heartBalance').textContent=String(b)}
+function renderGiftCatalog(){
+  const box=$('#sheetGiftbar');if(!box)return;
+  const catalog=giftCatalog();
+  const list=catalog.filter(g=>g.category===giftCategory);
+  box.innerHTML=list.map(g=>`<button type="button" class="giftTile gift3d ${selectedGiftId===g.id?'selected':''} ${g.thumb?'giftMediaTile':''} ${g.videoUrl?'giftVideoTile':''}" data-gift="${g.id}" data-effect="${g.effect||'pop'}">${g.thumb?`<span class="giftThumbWrap"><img class="giftThumb" src="${esc(g.thumb)}" alt=""></span>`:`<span class="giftIcon">${g.emoji||GIFT_EMOJI[g.id]||'🎁'}</span>`}${g.videoUrl?'<span class="giftVideoMark">▶ VIDEO</span>':''}<b>${esc(g.name)}</b><small>♥ ${g.cost}</small>${g.epic?'<em>EPIC</em>':''}</button>`).join('');
+  const sel=giftCatalog().find(g=>g.id===selectedGiftId);
+  $('#giftSelected').innerHTML=sel?`<span class="giftSelectedIcon">${sel.emoji}</span><span><b>${esc(sel.name)}</b><small>♥ ${sel.cost}</small></span>`:'<span>Коснись подарка</span>';
+  $('#giftFooter')?.classList.add('ready');
+  updateGiftBalance();
+}
+function openPlayerSheet(p,i){selectedSlot=i;selectedPlayer=p;selectedDemo=p.real?null:p;selectedTarget=(!isDemoMode()&&p.real&&p.id!==playerId)?p.id:null;selectedGiftId=null;giftCategory='popular';$('#sheetName').textContent=p.name;$('#sheetHint').textContent=p.id===playerId?'Это вы':'Отправить подарок';$('#sheetPhoto').style.backgroundImage=`url("${p.photo}")`;$('#playerSheet').classList.remove('hidden');document.querySelectorAll('#giftTabs [data-gift-cat]').forEach(b=>b.classList.toggle('active',b.dataset.giftCat==='popular'));renderGiftCatalog()}
+function closePlayerSheet(){$('#playerSheet').classList.add('hidden');selectedGiftId=null}
+function openPlayerProfile(p,i){selectedSlot=i;selectedPlayer=p;closePlayerSheet();$('#profileName').textContent=p.name;$('#profileHero').style.backgroundImage=`url("${p.photo}")`;const seed=(p.badge||0)+i*17;$('#profileKisses').textContent=(seed*137+862)%90000;$('#profileLikes').textContent=(seed*23+348)%9999;const pics=[photoFor(`${p.id||p.name}-a`,i+3),photoFor(`${p.id||p.name}-b`,i+9),photoFor(`${p.id||p.name}-c`,i+14)];$('#profileGallery').innerHTML=pics.map((src,n)=>`<button type="button" class="profileThumb ${n===0?'active':''}" style="background-image:url('${src}')" data-src="${src}"></button>`).join('');const self=document.querySelector('.person.self');const selfImg=self?.querySelector('img')?.src||photoFor(playerId,1);const selfName=self?.querySelector('.name')?.textContent||'Player 1';$('#courtshipAvatar').style.backgroundImage=`url("${selfImg}")`;$('#courtshipName').textContent=selfName;const hearts=18+((seed*7)%120);$('#courtshipHearts').textContent=String(hearts);$('#courtshipRank').textContent=String(1200+((seed*113)%9000))+' в рейтинге';const courtBtn=$('#courtshipBtn');const courtKey=`kissmeet.court.${p.id||p.name}`;const courting=localStorage.getItem(courtKey)==='1';courtBtn.textContent='Ухажер';courtBtn.classList.toggle('active',courting);courtBtn.onclick=()=>{const on=localStorage.getItem(courtKey)!=='1';localStorage.setItem(courtKey,on?'1':'0');courtBtn.textContent='Ухажер';courtBtn.classList.toggle('active',on)};const actionBar=document.querySelector('.profileActionBar');actionBar.querySelector('.profileMsgBtn').onclick=()=>{closePlayerProfile();setTimeout(()=>{const m=document.querySelector('#msg');if(m){m.focus();m.placeholder='Сообщение для '+p.name}},80)};actionBar.querySelector('.profileGiftBtn').onclick=()=>{closePlayerProfile();setTimeout(()=>openPlayerSheet(p,i),80)};const msgBtn=document.querySelector('.profileMsgBtn');if(msgBtn)msgBtn.onclick=()=>{const display=String(p.name||'Игрок').split(',')[0].trim();chatReplyTarget={id:p.id||null,name:display};closePlayerProfile();const chat=$('#chatArea');chat?.scrollIntoView({behavior:'smooth',block:'end'});const input=$('#msg');if(input){input.value=`@${display} `;input.placeholder=`Сообщение для ${display}`;setTimeout(()=>{input.focus();try{input.setSelectionRange(input.value.length,input.value.length)}catch{}},260)}};$('#playerProfile').classList.remove('hidden')}
+function closePlayerProfile(){$('#playerProfile').classList.add('hidden')}
+function giftElForPlayer(id){for(const el of document.querySelectorAll('.person[data-player-id]'))if(el.dataset.playerId===String(id))return el.querySelector('.photo');return null}
+function giftFallbackSource(){const r=document.querySelector('#giftSendBtn')?.getBoundingClientRect();if(r)return{x:r.left+r.width/2,y:r.top+r.height/2};return{x:innerWidth/2,y:innerHeight-90}}
+function giftFallbackTarget(){return{x:innerWidth/2,y:Math.max(220,innerHeight*.42)}}
+function giftPoint(el,fallback){if(!el)return fallback;const r=el.getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/2}}
+function giftSoundPlay(epic=false){if(localStorage.getItem('kissmeet.giftSound')==='0')return;try{const C=window.AudioContext||window.webkitAudioContext,ctx=new C(),o=ctx.createOscillator(),g=ctx.createGain();o.type=epic?'sine':'triangle';o.frequency.setValueAtTime(epic?220:520,ctx.currentTime);o.frequency.exponentialRampToValueAtTime(epic?880:760,ctx.currentTime+.28);g.gain.setValueAtTime(.0001,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.11,ctx.currentTime+.03);g.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+.42);o.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+.45)}catch{}}
+function lionSoundEnabled(){return localStorage.getItem('kissmeet.giftSound')!=='0'}
+const LION_SOUND_URL='https://kiss-meet-club.higgsfield.app/assets/gifts/lion-real-v4/lion-sound-v10.mp3?v=10';
+function ensurePremiumLionVideo(){
+  let v=window.__kissMeetPremiumLionVideo;
+  if(v&&v.isConnected)return v;
+  v=document.createElement('video');
+  v.src='https://kiss-meet-club.higgsfield.app/assets/gifts/lion-real-v4/lion-jump-real-v10-silent.mp4?v=10';
+  v.preload='auto';v.playsInline=true;v.setAttribute('playsinline','');v.setAttribute('webkit-playsinline','');v.crossOrigin='anonymous';v.loop=false;v.muted=true;v.volume=1;v.className='premiumLionSourceVideo';
+  document.body.appendChild(v);window.__kissMeetPremiumLionVideo=v;return v;
+}
+function ensureLionAudioElement(){
+  let snd=window.__kissMeetLionGiftSound;
+  if(snd)return snd;
+  snd=document.createElement('audio');snd.src=LION_SOUND_URL;snd.preload='auto';snd.loop=false;snd.muted=false;snd.volume=1;snd.setAttribute('playsinline','');snd.style.display='none';document.body.appendChild(snd);window.__kissMeetLionGiftSound=snd;return snd;
+}
+function ensureLionAudioContext(){
+  try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return null;let ctx=window.__kissMeetLionAudioCtx;if(!ctx){ctx=new C();window.__kissMeetLionAudioCtx=ctx}return ctx}catch{return null}
+}
+function loadLionAudioBuffer(){
+  if(window.__kissMeetLionAudioBuffer)return Promise.resolve(window.__kissMeetLionAudioBuffer);
+  if(window.__kissMeetLionAudioLoading)return window.__kissMeetLionAudioLoading;
+  const ctx=ensureLionAudioContext();if(!ctx)return Promise.resolve(null);
+  window.__kissMeetLionAudioLoading=fetch(LION_SOUND_URL,{cache:'force-cache'}).then(r=>{if(!r.ok)throw new Error('lion audio fetch');return r.arrayBuffer()}).then(b=>ctx.decodeAudioData(b)).then(buf=>{window.__kissMeetLionAudioBuffer=buf;return buf}).catch(()=>null);
+  return window.__kissMeetLionAudioLoading;
+}
+function primeLionGiftAudio(){
+  if(!lionSoundEnabled())return;
+  try{const snd=ensureLionAudioElement();if(!snd.readyState)snd.load()}catch{}
+  const ctx=ensureLionAudioContext();try{if(ctx?.state==='suspended')ctx.resume().catch(()=>{})}catch{};loadLionAudioBuffer();
+}
+function startLionGiftSoundFromGesture(){
+  if(!lionSoundEnabled())return null;
+  primeLionGiftAudio();
+  try{
+    const snd=ensureLionAudioElement();snd.pause();snd.currentTime=0;snd.muted=false;snd.volume=1;
+    const p=snd.play();p?.then?.(()=>{window.__kissMeetLionGestureStart=performance.now()}).catch(()=>{});return snd;
+  }catch{return null}
+}
+document.addEventListener('pointerdown',primeLionGiftAudio,{capture:true,passive:true});
+function lionGiftSound(){
+  if(!lionSoundEnabled())return null;
+  try{
+    const snd=ensureLionAudioElement();
+    if(!snd.paused&&snd.currentTime>0&&snd.currentTime<2.5)return snd;
+  }catch{}
+  const ctx=ensureLionAudioContext(),buf=window.__kissMeetLionAudioBuffer;
+  if(ctx&&buf&&ctx.state==='running'){
+    try{window.__kissMeetLionAudioSource?.stop?.()}catch{}
+    try{const source=ctx.createBufferSource(),gain=ctx.createGain();source.buffer=buf;gain.gain.value=1;source.connect(gain);gain.connect(ctx.destination);source.start(0);window.__kissMeetLionAudioSource=source;return{stop:()=>{try{source.stop()}catch{}}}}catch{}
+  }
+  try{const snd=ensureLionAudioElement();snd.pause();snd.currentTime=0;snd.muted=false;snd.volume=1;snd.play()?.catch?.(()=>{});return snd}catch{return null}
+}
+function stopLionGiftSound(handle){try{handle?.stop?.()}catch{};try{handle?.pause?.();if(handle&&'currentTime' in handle)handle.currentTime=0}catch{}}
+function startLionChromaCanvas(canvas,video){
+  let gl=null,raf=0,stopped=false,texture=null,program=null,buffer=null;
+  try{gl=canvas.getContext('webgl',{alpha:true,antialias:true,premultipliedAlpha:false})||canvas.getContext('experimental-webgl',{alpha:true,premultipliedAlpha:false})}catch{}
+  if(!gl)return()=>{};
+  const compile=(type,source)=>{const sh=gl.createShader(type);gl.shaderSource(sh,source);gl.compileShader(sh);if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(sh)||'shader');return sh};
+  try{
+    const vs=compile(gl.VERTEX_SHADER,'attribute vec2 aPos;attribute vec2 aTex;varying vec2 vTex;void main(){vTex=aTex;gl_Position=vec4(aPos,0.0,1.0);}');
+    const fs=compile(gl.FRAGMENT_SHADER,'precision mediump float;uniform sampler2D uTex;varying vec2 vTex;void main(){vec4 c=texture2D(uTex,vTex);float rb=max(c.r,c.b);float dominance=c.g-rb;float total=max(c.r+c.g+c.b,0.001);float greenShare=c.g/total;float keyA=smoothstep(0.010,0.075,dominance);float keyB=smoothstep(0.355,0.435,greenShare)*smoothstep(0.0,0.065,dominance);float key=max(keyA,keyB);float a=c.a*(1.0-key);if(a<0.035)discard;float spill=max(0.0,c.g-rb);float cleanG=max(0.0,c.g-spill*0.96);vec3 rgb=vec3(c.r,cleanG,c.b);gl_FragColor=vec4(rgb,a);}');
+    program=gl.createProgram();gl.attachShader(program,vs);gl.attachShader(program,fs);gl.linkProgram(program);if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw new Error('program');gl.useProgram(program);
+    buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,0,0,1,-1,1,0,-1,1,0,1,1,1,1,1]),gl.STATIC_DRAW);
+    const pa=gl.getAttribLocation(program,'aPos'),ta=gl.getAttribLocation(program,'aTex');gl.enableVertexAttribArray(pa);gl.vertexAttribPointer(pa,2,gl.FLOAT,false,16,0);gl.enableVertexAttribArray(ta);gl.vertexAttribPointer(ta,2,gl.FLOAT,false,16,8);
+    texture=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,texture);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);gl.uniform1i(gl.getUniformLocation(program,'uTex'),0);gl.clearColor(0,0,0,0);
+  }catch{return()=>{}};
+  const draw=()=>{if(stopped)return;try{if(video.readyState>=2&&video.videoWidth){const w=video.videoWidth,h=video.videoHeight;if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;gl.viewport(0,0,w,h)}gl.clear(gl.COLOR_BUFFER_BIT);gl.bindTexture(gl.TEXTURE_2D,texture);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,video);gl.drawArrays(gl.TRIANGLE_STRIP,0,4)}}catch{}raf=requestAnimationFrame(draw)};draw();
+  return()=>{stopped=true;cancelAnimationFrame(raf);try{if(texture)gl.deleteTexture(texture);if(buffer)gl.deleteBuffer(buffer);if(program)gl.deleteProgram(program)}catch{}};
+}
+function showLionAfterglow(x,y){
+  document.querySelector('.lionAfterglow')?.remove();
+  const fx=document.createElement('div');fx.className='lionAfterglow';fx.style.setProperty('--fx-x',Math.round(x)+'px');fx.style.setProperty('--fx-y',Math.round(y)+'px');
+  fx.innerHTML=`<div class="lionAfterglowRing r1"></div><div class="lionAfterglowRing r2"></div><div class="lionAfterglowRing r3"></div><div class="lionClaw c1"></div><div class="lionClaw c2"></div><div class="lionClaw c3"></div><div class="lionSigil">✦</div><div class="lionSparkField">${Array.from({length:24},(_,i)=>`<i style="--a:${i*15}deg;--d:${(i%6)*.035}s;--r:${90+(i%7)*18}px"></i>`).join('')}</div>`;
+  document.body.appendChild(fx);try{navigator.vibrate?.([35,24,70])}catch{};setTimeout(()=>fx.remove(),2100);
+}
+function showPremiumLionGift(from='Игрок',to='Игрок'){
+  document.querySelector('.premiumLionTakeover')?.remove();document.querySelector('.lionAfterglow')?.remove();const video=ensurePremiumLionVideo();try{video.pause();video.currentTime=0}catch{}
+  const wrap=document.createElement('div');wrap.className='premiumLionTakeover';const anchor=document.querySelector('.centerBottle')||document.querySelector('.table');let ax=innerWidth/2,ay=Math.max(250,innerHeight*.43);if(anchor){const r=anchor.getBoundingClientRect();ax=r.left+r.width/2;ay=r.top+r.height/2}wrap.style.setProperty('--lion-x',Math.round(ax)+'px');wrap.style.setProperty('--lion-y',Math.round(ay)+'px');
+  const shards=Array.from({length:18},(_,i)=>`<i style="--a:${i*20}deg;--z:${18+(i%6)*18}px;--d:${(i%5)*.035}s;--s:${.62+(i%4)*.16}"></i>`).join('');
+  wrap.innerHTML=`<div class="lionPrelude" aria-hidden="true"><div class="lionPreludeFloor"><i class="pRing r1"></i><i class="pRing r2"></i><i class="pRing r3"></i><i class="pRing r4"></i></div><div class="lionPreludeOrb"><i></i><b></b></div><div class="lionPreludeHalo h1"></div><div class="lionPreludeHalo h2"></div><div class="lionPreludeShards">${shards}</div><div class="lionPreludeFlash"></div></div><canvas class="premiumLionCanvas" aria-hidden="true"></canvas><div class="premiumLionGiftCard"><span class="premiumLionMini">🦁</span><div><b>Золотой лев</b><small>${esc(from)} → ${esc(to)}</small></div><strong>x1</strong></div>`;document.body.appendChild(wrap);
+  const stopCanvas=startLionChromaCanvas(wrap.querySelector('.premiumLionCanvas'),video);let done=false,killTimer,vibeA,vibeB,startTimer,activeSound=null;
+  const finish=()=>{if(done)return;done=true;clearTimeout(killTimer);clearTimeout(vibeA);clearTimeout(vibeB);clearTimeout(startTimer);try{video.pause();video.currentTime=0}catch{}stopCanvas();wrap.classList.add('leaving');setTimeout(()=>{wrap.remove();showLionAfterglow(ax,ay)},460)};
+  killTimer=setTimeout(finish,11800);vibeA=setTimeout(()=>{try{navigator.vibrate?.([38,22,62])}catch{}},980);vibeB=setTimeout(()=>{try{navigator.vibrate?.([80,28,140,32,175])}catch{}},6050);
+  activeSound=lionGiftSound();
+  const playLion=()=>{if(done)return;wrap.classList.add('lionStarted');video.loop=false;video.volume=0;video.muted=true;video.currentTime=0;video.play()?.catch?.(()=>{})};
+  const queueLion=()=>{startTimer=setTimeout(playLion,1250)};
+  if(video.readyState>=1)queueLion();else video.addEventListener('loadedmetadata',queueLion,{once:true});video.addEventListener('ended',finish,{once:true});
 }
 
-document.querySelector("#reset").addEventListener("click", () => send({ type: "reset" }));
 
-connect();
+const KYRGYZ_WARRIOR_ANIM_URL='https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/0ae0fa1f-c2f2-4904-b88f-d6dcd20f6717.webp';
+const KYRGYZ_WARRIOR_AUDIO_URL='https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/b6c1aad5-12e0-4ac2-8264-a996ad77aae9.mp4';
+function ensureKyrgyzWarriorAudio(){
+  let a=window.__kissMeetKyrgyzWarriorAudio;if(a)return a;
+  a=document.createElement('audio');a.src=KYRGYZ_WARRIOR_AUDIO_URL;a.preload='auto';a.setAttribute('playsinline','');a.style.display='none';a.volume=1;document.body.appendChild(a);window.__kissMeetKyrgyzWarriorAudio=a;return a;
+}
+function primeKyrgyzWarrior(){try{const a=ensureKyrgyzWarriorAudio();if(!a.readyState)a.load()}catch{}}
+function startKyrgyzWarriorSoundFromGesture(){if(!lionSoundEnabled())return null;primeKyrgyzWarrior();try{const a=ensureKyrgyzWarriorAudio();a.pause();a.currentTime=0;a.muted=false;a.volume=1;const p=a.play();p?.then?.(()=>{window.__kissMeetKyrgyzWarriorGestureStart=performance.now()}).catch(()=>{});return a}catch{return null}}
+function kyrgyzWarriorSound(){if(!lionSoundEnabled())return null;try{const a=ensureKyrgyzWarriorAudio(),age=performance.now()-(window.__kissMeetKyrgyzWarriorGestureStart||0);if(!a.paused&&age<2200)return a;a.pause();a.currentTime=0;a.muted=false;a.volume=1;a.play()?.catch?.(()=>{});return a}catch{return null}}
+function stopKyrgyzWarriorSound(a){try{a?.pause?.();if(a&&'currentTime' in a)a.currentTime=0}catch{}}
+document.addEventListener('pointerdown',primeKyrgyzWarrior,{capture:true,passive:true});
+function showKyrgyzAfterglow(x,y){
+  document.querySelector('.kyrgyzAfterglow')?.remove();
+  const fx=document.createElement('div');fx.className='kyrgyzAfterglow';fx.style.setProperty('--kg-x',Math.round(x)+'px');fx.style.setProperty('--kg-y',Math.round(y)+'px');
+  const bits=Array.from({length:28},(_,i)=>'<i class="kgAfterSpark" style="--a:'+(i*12.86)+'deg;--d:'+((i%7)*.025)+'s;--r:'+(85+(i%8)*18)+'px"></i>').join('');
+  fx.innerHTML='<div class="kgAfterRing r1"></div><div class="kgAfterRing r2"></div><div class="kgAfterRing r3"></div><div class="kgAfterSun">☀</div>'+bits;
+  document.body.appendChild(fx);try{navigator.vibrate?.([45,22,70])}catch{};setTimeout(()=>fx.remove(),1900);
+}
+function showKyrgyzWarriorGift(from='Игрок',to='Игрок'){
+  document.querySelector('.premiumKyrgyzTakeover')?.remove();document.querySelector('.kyrgyzAfterglow')?.remove();
+  const wrap=document.createElement('div');wrap.className='premiumKyrgyzTakeover';
+  const anchor=document.querySelector('.centerBottle')||document.querySelector('.table');let ax=innerWidth/2,ay=Math.max(250,innerHeight*.44);if(anchor){const r=anchor.getBoundingClientRect();ax=r.left+r.width/2;ay=r.top+r.height/2}
+  wrap.style.setProperty('--kg-x',Math.round(ax)+'px');wrap.style.setProperty('--kg-y',Math.round(ay)+'px');
+  const sparks=Array.from({length:24},(_,i)=>'<i style="--a:'+(i*15)+'deg;--d:'+((i%6)*.03)+'s;--r:'+(75+(i%7)*17)+'px"></i>').join('');
+  wrap.innerHTML='<div class="kyrgyzPrelude" aria-hidden="true"><div class="kgFloor"><i></i><i></i><i></i></div><div class="kgAura"></div><div class="kgSunburst"></div><div class="kgSparks">'+sparks+'</div></div><img class="kyrgyzWarriorCanvas kyrgyzWarriorAnim" alt="" aria-hidden="true"><div class="kyrgyzGiftCard"><span>🇰🇬</span><div><b>Воин</b><small>'+esc(from)+' → '+esc(to)+'</small></div><strong>x1</strong></div>';
+  document.body.appendChild(wrap);
+  const img=wrap.querySelector('.kyrgyzWarriorAnim');let done=false,killTimer,startTimer,vibeA,vibeB,activeSound=kyrgyzWarriorSound();
+  const finish=()=>{if(done)return;done=true;clearTimeout(killTimer);clearTimeout(startTimer);clearTimeout(vibeA);clearTimeout(vibeB);stopKyrgyzWarriorSound(activeSound);wrap.classList.add('leaving');setTimeout(()=>{wrap.remove();showKyrgyzAfterglow(ax,ay)},360)};
+  killTimer=setTimeout(finish,9600);vibeA=setTimeout(()=>{try{navigator.vibrate?.([34,18,54])}catch{}},700);vibeB=setTimeout(()=>{try{navigator.vibrate?.([90,28,120])}catch{}},5100);
+  startTimer=setTimeout(()=>{if(done)return;img.src=KYRGYZ_WARRIOR_ANIM_URL+'?play='+Date.now();wrap.classList.add('kgStarted')},760);
+}
+
+const AURAKG_VIDEO_URL="https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/a2980340-82b8-4dd8-b66c-666072acf888.mp4";
+const AURAKG_THUMB_URL="https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/b957f332-c721-4527-b9e1-6d78e08d3244.jpg";
+function ensureAurakgAudio(){let a=window.__aurakgAudio;if(a)return a;a=document.createElement('audio');a.src=AURAKG_VIDEO_URL;a.preload='auto';a.style.display='none';a.setAttribute('playsinline','');document.body.appendChild(a);window.__aurakgAudio=a;return a}
+function startAurakgSoundFromGesture(){if(!lionSoundEnabled())return null;try{const a=ensureAurakgAudio();a.pause();a.currentTime=0;a.muted=false;a.volume=1;a.play()?.catch?.(()=>{});return a}catch{return null}}
+function showAurakgGift(from='Игрок',to='Игрок'){document.querySelector('.aurakgTakeover')?.remove();const w=document.createElement('div');w.className='aurakgTakeover';w.innerHTML='<div class="aurakgPrelude"><i></i><i></i><i></i><b>⚡</b></div><video class="aurakgVideo" src="'+AURAKG_VIDEO_URL+'" muted playsinline preload="auto"></video><div class="aurakgCard"><img src="'+AURAKG_THUMB_URL+'"><span><b>aurakg</b><small>'+esc(from)+' → '+esc(to)+'</small></span><strong>x1</strong></div>';document.body.appendChild(w);const v=w.querySelector('.aurakgVideo'),a=ensureAurakgAudio();try{if(lionSoundEnabled()){a.pause();a.currentTime=0;a.muted=false;a.volume=1;a.play()?.catch?.(()=>{})}}catch{};setTimeout(()=>{w.classList.add('started');v.play()?.catch?.(()=>{})},650);const finish=()=>{try{a.pause();a.currentTime=0}catch{};w.classList.add('leaving');setTimeout(()=>w.remove(),420)};v.addEventListener('ended',finish,{once:true});setTimeout(finish,10500);try{navigator.vibrate?.([40,25,70,25,110])}catch{}}
+
+
+const BAURI_VIDEO_URL='https://d8j0ntlcm91z4.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/hf_20260915_080027_8eccd2b9-f0ef-49a8-9ffb-3eeb6cb85c13.mp4',BAURI_AUDIO_URL='https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/c86a39dc-e6b1-4573-943c-3162d06d8787.mp3',BAURI_THUMB_URL='https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/37e30f09-532c-4140-ae99-53064112a522.jpg';
+function ensureBauriVideo(){let v=window.__bauriVideo;if(v&&v.isConnected)return v;v=document.createElement('video');v.src=BAURI_VIDEO_URL;v.preload='auto';v.playsInline=true;v.setAttribute('playsinline','');v.crossOrigin='anonymous';v.muted=true;v.volume=0;v.className='bauriSourceVideo';document.body.appendChild(v);window.__bauriVideo=v;return v}
+function ensureBauriAudio(){let a=window.__bauriAudio;if(a)return a;a=document.createElement('audio');a.src=BAURI_AUDIO_URL;a.preload='auto';a.setAttribute('playsinline','');a.style.display='none';document.body.appendChild(a);window.__bauriAudio=a;return a}
+function primeBauri(){if(!lionSoundEnabled())return;try{const a=ensureBauriAudio();a.load();const ctx=ensureLionAudioContext();if(ctx?.state==='suspended')ctx.resume().catch(()=>{})}catch{}try{ensureBauriVideo().load()}catch{}}
+document.addEventListener('pointerdown',primeBauri,{capture:true,passive:true});
+function playBauriAudio(){if(!lionSoundEnabled())return null;try{const a=ensureBauriAudio();a.pause();a.currentTime=0;a.muted=false;a.volume=1;a.play()?.catch?.(()=>{});return a}catch{return null}}
+function stopBauriAudio(a){try{a?.pause?.();a.currentTime=0}catch{}}
+function startBauriCarSound(side=1){
+ if(!lionSoundEnabled())return null;const ctx=ensureLionAudioContext();if(!ctx||ctx.state!=='running')return null;try{
+  const now=ctx.currentTime,master=ctx.createGain(),motor=ctx.createOscillator(),rumble=ctx.createOscillator(),motorGain=ctx.createGain(),rumbleGain=ctx.createGain(),filter=ctx.createBiquadFilter(),pan=ctx.createStereoPanner?ctx.createStereoPanner():null;
+  master.gain.setValueAtTime(.0001,now);master.gain.exponentialRampToValueAtTime(.07,now+.18);master.gain.linearRampToValueAtTime(.12,now+2.9);master.gain.exponentialRampToValueAtTime(.0001,now+4.15);
+  motor.type='sawtooth';motor.frequency.setValueAtTime(58,now);motor.frequency.exponentialRampToValueAtTime(104,now+3.2);motor.frequency.exponentialRampToValueAtTime(72,now+4.1);motorGain.gain.value=.42;
+  rumble.type='triangle';rumble.frequency.setValueAtTime(31,now);rumble.frequency.linearRampToValueAtTime(49,now+3.4);rumbleGain.gain.value=.7;filter.type='lowpass';filter.frequency.setValueAtTime(620,now);filter.frequency.linearRampToValueAtTime(980,now+3.2);filter.Q.value=.7;
+  const noiseBuf=ctx.createBuffer(1,ctx.sampleRate,ctx.sampleRate),data=noiseBuf.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*.16;const road=ctx.createBufferSource(),roadGain=ctx.createGain(),roadFilter=ctx.createBiquadFilter();road.buffer=noiseBuf;road.loop=true;roadFilter.type='bandpass';roadFilter.frequency.value=420;roadFilter.Q.value=.55;roadGain.gain.setValueAtTime(.015,now);roadGain.gain.linearRampToValueAtTime(.06,now+2.8);roadGain.gain.exponentialRampToValueAtTime(.0001,now+4.05);
+  motor.connect(motorGain);motorGain.connect(filter);rumble.connect(rumbleGain);rumbleGain.connect(filter);road.connect(roadFilter);roadFilter.connect(roadGain);roadGain.connect(filter);if(pan){pan.pan.setValueAtTime(side>0?.72:-.72,now);pan.pan.linearRampToValueAtTime(0,now+3.5);filter.connect(pan);pan.connect(master)}else filter.connect(master);master.connect(ctx.destination);
+  motor.start(now);rumble.start(now);road.start(now);motor.stop(now+4.3);rumble.stop(now+4.3);road.stop(now+4.3);return{stop(){try{motor.stop()}catch{}try{rumble.stop()}catch{}try{road.stop()}catch{}try{master.disconnect()}catch{}}}
+ }catch{return null}
+}
+function showBauriVipGift(from='Игрок',to='Игрок',targetId=null,targetEl=null,opts={}){
+ document.querySelector('.bauriVipTakeover')?.remove();const target=targetEl||giftElForPlayer(targetId),p=giftPoint(target,giftFallbackTarget()),side=p.x<innerWidth/2?1:-1,sx=Math.max(130,Math.min(innerWidth-130,p.x+side*Math.min(innerWidth*.23,190))),minStageY=Math.max(330,innerHeight*.43),maxStageY=Math.max(minStageY,innerHeight*.68),sy=Math.max(minStageY,Math.min(maxStageY,p.y+118));
+ const w=document.createElement('div');w.className='bauriVipTakeover';w.style.setProperty('--bx',Math.round(p.x)+'px');w.style.setProperty('--by',Math.round(p.y)+'px');w.style.setProperty('--sx',Math.round(sx)+'px');w.style.setProperty('--sy',Math.round(sy)+'px');w.style.setProperty('--enter',(side*46)+'px');const sparks=Array.from({length:16},(_,n)=>`<i style="--a:${n*22.5}deg;--d:${(n%5)*.04}s"></i>`).join('');w.innerHTML=`<div class="bauriPrelude"><div class="bauriRing r1"></div><div class="bauriRing r2"></div><div class="bauriRoad"></div><div class="bauriSparks">${sparks}</div><div class="bauriFlash"></div></div><canvas class="bauriCanvas"></canvas><div class="bauriCard"><img src="${BAURI_THUMB_URL}"><span><b>Баури VIP</b><small>${esc(from)} → ${esc(to)}</small></span><strong>VIP</strong></div>`;document.body.appendChild(w);
+ const v=ensureBauriVideo();try{v.pause();v.currentTime=0}catch{}const stopCanvas=startLionChromaCanvas(w.querySelector('.bauriCanvas'),v);let done=false,a=playBauriAudio(),car=null,t1=setTimeout(()=>{if(done)return;w.classList.add('started');car=startBauriCarSound(side);try{v.currentTime=0;v.play()?.catch?.(()=>{})}catch{}},1200),t2=setTimeout(finish,17600);function finish(){if(done)return;done=true;clearTimeout(t1);clearTimeout(t2);try{v.pause();v.currentTime=0}catch{}try{car?.stop?.()}catch{}stopBauriAudio(a);stopCanvas();w.classList.add('leaving');setTimeout(()=>w.remove(),500)}v.addEventListener('ended',finish,{once:true});try{navigator.vibrate?.([30,25,55,20,80])}catch{}
+}
+
+function showEpicGift(gift,from,to){
+  if(gift?.id==='lion'){return}
+  const o=$('#giftEpicOverlay');if(!o)return;$('#giftEpicEmoji').textContent=gift.emoji||'🎁';$('#giftEpicTitle').textContent=gift.name||'Подарок';$('#giftEpicRoute').textContent=`${from} → ${to}`;o.dataset.gift=gift.id||'epic';o.classList.remove('hidden');o.setAttribute('aria-hidden','false');giftSoundPlay(true);clearTimeout(o._hide);o._hide=setTimeout(()=>{o.classList.add('hidden');o.setAttribute('aria-hidden','true')},3000)
+}
+function giftBurst(gift,point){
+  const wrap=document.createElement('div');wrap.className=`giftBurst effect-${gift.effect||'pop'}`;wrap.style.left=point.x+'px';wrap.style.top=point.y+'px';
+  const count=gift.epic?18:10;
+  for(let i=0;i<count;i++){const p=document.createElement('i');p.textContent=i%3===0?(gift.emoji||'✨'):(gift.effect==='stink'?'💨':gift.effect==='money'?'💸':gift.effect==='fire'?'🔥':'✨');const a=i/count*Math.PI*2,r=58+Math.random()*92;p.style.setProperty('--dx',(Math.cos(a)*r)+'px');p.style.setProperty('--dy',(Math.sin(a)*r)+'px');p.style.setProperty('--d',(Math.random()*.18)+'s');wrap.appendChild(p)}
+  document.body.appendChild(wrap);setTimeout(()=>wrap.remove(),1900);
+}
+function giftImpact(gift,targetEl){if(!targetEl)return;const cls=`impact-${gift.effect||'pop'}`;targetEl.classList.add(cls);setTimeout(()=>targetEl.classList.remove(cls),900)}
+const kolunanStickerPlayers=new Set();
+const giftVideoQueue=[];
+let giftVideoPlaying=false;
+function restoreKolunanSticker(photo,id){
+  if(!photo||!kolunanStickerPlayers.has(String(id))||photo.querySelector('.kolunanSticker'))return;
+  const sticker=document.createElement('span');sticker.className='kolunanSticker';sticker.setAttribute('aria-label','Перчики');
+  sticker.innerHTML='<b>🌶️</b><i>🌶️</i><em>🌶️</em>';photo.appendChild(sticker);
+}
+function showKolunanSticker(id){
+  id=String(id);const photo=giftElForPlayer(id);if(!photo)return;
+  const start=giftPoint($('#chatArea'),giftFallbackSource()),target=giftPoint(photo,giftFallbackTarget());
+  const fx=document.createElement('span');fx.className='kolunanStickerFlight';fx.innerHTML='<b>🌶️</b><i>🌶️</i><em>🌶️</em>';
+  fx.style.left=start.x+'px';fx.style.top=start.y+'px';document.body.appendChild(fx);
+  const finish=()=>{fx.remove();const current=giftElForPlayer(id);if(!current)return;kolunanStickerPlayers.add(id);restoreKolunanSticker(current,id)};
+  const dx=target.x-start.x,dy=target.y-start.y;
+  if(!fx.animate){finish();return}
+  fx.animate([
+    {transform:'translate(-50%,-50%) scale(.3) rotate(-30deg)',opacity:0},
+    {transform:`translate(calc(-50% + ${dx*.45}px),calc(-50% + ${dy*.5-65}px)) scale(1.55) rotate(25deg)`,opacity:1,offset:.5},
+    {transform:`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(.55) rotate(-12deg)`,opacity:1}
+  ],{duration:1250,easing:'cubic-bezier(.2,.75,.3,1)',fill:'forwards'}).onfinish=finish;
+}
+function showGolodnyakLight(playerIdValue){
+  const photo=giftElForPlayer(String(playerIdValue||''));if(!photo)return;
+  photo.querySelector('.golodnyakLight')?.remove();
+  const fx=document.createElement('span');fx.className='golodnyakLight';fx.innerHTML='<i></i><b>✨</b><em>✦</em>';
+  photo.appendChild(fx);setTimeout(()=>fx.remove(),3600);
+}
+function showBananaCar(playerIdValue){
+  const photo=giftElForPlayer(String(playerIdValue||''));if(!photo)return;
+  const r=photo.getBoundingClientRect(),fx=document.createElement('div');fx.className='bananaCarFx';
+  fx.style.setProperty('--tx',(r.left+r.width/2)+'px');fx.style.setProperty('--ty',(r.top+r.height/2)+'px');
+  fx.innerHTML='<div class="bananaCar">🚙</div><div class="bananaDrop"><i>🍌</i><i>🍌</i><i>🍌</i><i>🍌</i><i>🍌</i><i>🍌</i></div>';
+  document.body.appendChild(fx);photo.classList.add('bananaTargetGlow');
+  setTimeout(()=>photo.classList.remove('bananaTargetGlow'),3200);setTimeout(()=>fx.remove(),3600);
+}
+function showBombBurst(playerIdValue){
+  const photo=giftElForPlayer(String(playerIdValue||''));if(!photo)return;
+  const r=photo.getBoundingClientRect(),fx=document.createElement('div');fx.className='bombBurstFx';
+  fx.style.setProperty('--tx',(r.left+r.width/2)+'px');fx.style.setProperty('--ty',(r.top+r.height/2)+'px');
+  fx.innerHTML='<div class="bomb3d">💣</div><div class="bombFlash"></div><div class="bombSmoke">💨</div><div class="bombSparks"><i>✦</i><i>✦</i><i>✦</i><i>✦</i><i>✦</i><i>✦</i><i>✦</i><i>✦</i></div>';
+  document.body.appendChild(fx);photo.classList.add('bombTargetShake');
+  setTimeout(()=>photo.classList.remove('bombTargetShake'),1500);setTimeout(()=>fx.remove(),3200);
+}
+function showDonkeyCarPoop(playerIdValue){
+  const photo=giftElForPlayer(String(playerIdValue||''));if(!photo)return;
+  const r=photo.getBoundingClientRect(),fx=document.createElement('div');fx.className='donkeyCarPoopFx';
+  fx.style.setProperty('--tx',(r.left+r.width/2)+'px');fx.style.setProperty('--ty',(r.top+r.height/2)+'px');
+  fx.innerHTML='<div class="donkeyCarVehicle">🚗</div><div class="donkeyPassenger">🫏</div><div class="donkeyPoop">💩</div>';
+  document.body.appendChild(fx);
+  setTimeout(()=>{let mark=photo.querySelector('.donkeyPoopMark');if(!mark){mark=document.createElement('span');mark.className='donkeyPoopMark';mark.textContent='💩';photo.appendChild(mark)}},1900);
+  setTimeout(()=>photo.querySelector('.donkeyPoopMark')?.remove(),7200);
+  setTimeout(()=>fx.remove(),4200);
+}
+function showSnowSparkles(){
+  const layer=document.createElement('div');layer.className='giftSnowSparkles';
+  for(let i=0;i<72;i++){const x=document.createElement('i');x.style.setProperty('--x',Math.random()*100+'vw');x.style.setProperty('--d',(Math.random()*1.8)+'s');x.style.setProperty('--s',(3+Math.random()*7)+'px');x.style.setProperty('--dr',(-35+Math.random()*70)+'px');layer.appendChild(x)}
+  document.body.appendChild(layer);setTimeout(()=>layer.remove(),5200);
+}
+
+const BATCH_POST_FX={
+  pistol:{icons:['🔫','💥','✨'],label:'BANG!'},love:{icons:['💕','💖','✨'],label:'LOVE'},chaba_love:{icons:['🧑🏿','💕','✨'],label:'CHABA LOVE'},knockback:{icons:['💥','⚡','💨'],label:'BOOM'},suspicion:{icons:['🧐','❓','👀'],label:'ХМ…'},lollipop:{icons:['🍭','✨','😋'],label:'SWEET'},sulky:{icons:['😤','☁️','💢'],label:'ОБИДКА'},fireworks:{icons:['🎆','🎇','✨'],label:'WOW'},lucky:{icons:['🍀','✨','⭐'],label:'LUCKY'},queen:{icons:['👑','✨','💎'],label:'QUEEN'},flowers_red:{icons:['🌹','🌺','💕'],label:'FLOWERS'},heart_fireworks:{icons:['❤️','💥','💕'],label:'LOVE'},proposal:{icons:['💍','👑','💕'],label:'MARRY ME?'},cat_hero_love:{icons:['🐱','🥾','❤️'],label:'LOVE HERO'},chinese_love:{icons:['愛','❤️','✨'],label:'愛'},donkey_love:{icons:['🫏','❤️','✨'],label:'LOVE'},cheeky_love:{icons:['😈','❤️','✨'],label:'HEY!'},time:{icons:['⏰','⌛','❤️'],label:'TIME'},wink:{icons:['😉','✨','💕'],label:'WINK'},slingshot:{icons:['🪃','💥','😂'],label:'HIT!'},sakura_love:{icons:['🌸','愛','❤️'],label:'愛'},big_heart:{icons:['💟','💖','✨'],label:'LOVE'},jungle:{icons:['🌿','🦜','🐒'],label:'JUNGLE'},business:{icons:['💼','👠','✨'],label:'BOSS'},chicks:{icons:['🐥','🐣','✨'],label:'CHICKS'},titanic:{icons:['🌊','🚢','💦'],label:'OCEAN'},flowers_white:{icons:['🤍','🌼','✨'],label:'FLOWERS'},chickens:{icons:['🐔','🐓','💨'],label:'CHICKEN'},fruits:{icons:['🍌','🍎','🍇'],label:'FRUIT'},monkey_glasses:{icons:['🐒','😎','✨'],label:'PARTY'},flies:{icons:['🪰','🪰','💨'],label:'BUZZ'},panda_fighter:{icons:['🐼','🥋','💥'],label:'KUNG FU'},rapper:{icons:['🎤','⛓️','🔥'],label:'RAP'},holiday23:{icons:['⭐','🎉','🎆'],label:'23 ФЕВРАЛЯ'},doctor:{icons:['🩺','💊','✨'],label:'DOCTOR'},macho:{icons:['😎','🔥','✨'],label:'MACHO'},athlete:{icons:['🏋️','⚡','🏆'],label:'SPORT'},komuz:{icons:['🎶','✨','🇰🇬'],label:'КОМУЗ'},manas:{icons:['⚔️','✨','🇰🇬'],label:'МАНАС'},wisdom:{icons:['✨','🌙','💫'],label:'НАСААТ'},color_burst:{icons:['🌈','✨','💫'],label:'COLOR'}
+};
+function showBatchPostEffect(gift,targetId,targetEl){
+  const cfg=BATCH_POST_FX[gift?.postEffect];if(!cfg)return;
+  const el=targetEl||giftElForPlayer(targetId);if(!el)return;
+  const photo=el.querySelector('.photo')||el;
+  const fx=document.createElement('div');fx.className='batchPostFx batch-'+gift.postEffect;
+  fx.innerHTML=`<span class="batchFxHalo"></span><b class="batchFxLabel">${esc(gift.postLabel||cfg.label||'')}</b>${Array.from({length:12},(_,i)=>`<i style="--i:${i};--a:${(i*30)%360}deg;--d:${(i%5)*.08}s">${cfg.icons[i%cfg.icons.length]}</i>`).join('')}`;
+  photo.appendChild(fx);
+  if(['knockback','pistol','slingshot','panda_fighter'].includes(gift.postEffect)){
+    el.classList.remove('batchImpact');void el.offsetWidth;el.classList.add('batchImpact');setTimeout(()=>el.classList.remove('batchImpact'),1050);
+  }
+  if(gift.postEffect==='knockback'){el.classList.remove('batchKnockback');void el.offsetWidth;el.classList.add('batchKnockback');setTimeout(()=>el.classList.remove('batchKnockback'),1150);}
+  setTimeout(()=>fx.classList.add('out'),3300);setTimeout(()=>fx.remove(),4100);
+}
+
+function nextGiftVideo(){
+  giftVideoPlaying=false;
+  const next=giftVideoQueue.shift();if(next)showSeniSuyomGift(...next);
+}
+function showSeniSuyomGift(gift,from,to,targetId,targetEl){
+  const chat=$('#chatArea');if(!chat||!gift?.videoUrl)return;
+  if(giftVideoPlaying){giftVideoQueue.push([gift,from,to,targetId,targetEl]);return}
+  giftVideoPlaying=true;
+  chat.classList.add('giftVideoActive');
+  const stage=document.createElement('div');stage.className='giftVideoStage';stage.dataset.gift=gift.id||'video';
+  stage.innerHTML=`<div class="giftVideoTopControls"><button class="giftVideoHide" type="button" aria-label="Скрыть видео">Скрыть</button><button class="giftVideoSound" type="button" aria-label="Выключить звук">🔊</button></div><div class="giftVideoGlow"></div><div class="giftVideoHearts"><i>♥</i><i>♥</i><i>♥</i><i>♥</i><i>♥</i><i>♥</i></div><div class="giftVideoCard"><div class="giftVideoBadge"><img src="${esc(gift.thumb||'')}" alt=""><span><b>${esc(gift.name||'Сени сүйөм')}</b><small>${esc(from||'Игрок')} → ${esc(to||'Игрок')}</small></span></div><video class="giftLoveVideo" src="${esc(gift.videoUrl)}" autoplay playsinline></video><div class="giftVideoShine"></div></div>`;
+  chat.appendChild(stage);
+  const restore=document.createElement('div');restore.className='giftVideoRestore';restore.innerHTML=`<button class="giftVideoShow" type="button">Показать</button><button class="giftVideoSound giftVideoSoundMini" type="button" aria-label="Выключить звук">🔊</button>`;chat.appendChild(restore);
+  const v=stage.querySelector('video');
+  const soundButtons=[...stage.querySelectorAll('.giftVideoSound'),...restore.querySelectorAll('.giftVideoSound')];
+  const syncSound=()=>{soundButtons.forEach(btn=>{btn.textContent=v?.muted?'🔇':'🔊';btn.setAttribute('aria-label',v?.muted?'Включить звук':'Выключить звук')})};
+  const toggleSound=()=>{if(!v)return;v.muted=!v.muted;syncSound()};
+  let finished=false;
+  const end=(completed=false)=>{if(finished)return;finished=true;stage.classList.add('leaving');restore.classList.remove('active');setTimeout(()=>{
+    stage.remove();restore.remove();chat.classList.remove('giftVideoActive');
+    if(completed&&gift.id==='kolunan_emne_kelet')showKolunanSticker(targetId);
+    if(completed&&gift.id==='golodnyak')showGolodnyakLight(targetId);
+    if(completed&&gift.id==='oshtun_trassasy')showGolodnyakLight(targetId);
+    if(completed&&gift.id==='meni_karabachy')showGolodnyakLight(targetId);
+    if(completed&&gift.id==='ekrandan_alyzyraak_oturchu')showGolodnyakLight(targetId);
+    if(completed&&gift.id==='jalyaptarga_bargan_dosun')showGolodnyakLight(targetId);
+    if(completed&&gift.id==='nastroeniya_jok_kezde')showGolodnyakLight(targetId);
+    if(completed&&gift.id==='soguunu_toktotkula')showGolodnyakLight(targetId);
+    if(completed&&gift.id==='chykylа_kanshylabai'){showGolodnyakLight(targetId);showSnowSparkles();}
+    if(completed&&gift.id==='zhalyaptarga_bargan_dosun')showGolodnyakLight(targetId);
+    if(completed&&gift.id==='senin_kotu_kuygon_dosun')showGolodnyakLight(targetId);
+    if(completed&&gift.id==='bratishkan_turaby')showGolodnyakLight(targetId);
+    if(completed&&gift.id==='tishi_jok_dosun')showGolodnyakLight(targetId);
+    if(completed&&gift.id==='iterisheli_emi')showGolodnyakLight(targetId);
+    if(completed&&gift.id==='odin_polka_pozhaluysta')showGolodnyakLight(targetId);
+    if(completed&&gift.id==='kysteke_dosuna')showGolodnyakLight(targetId);
+    if(completed&&gift.id==='sen_kanchanchy_jylkysyn')showGolodnyakLight(targetId);
+    if(completed&&gift.id==='shlyapa_yrgytchy')showGolodnyakLight(targetId);
+    if(completed&&gift.id==='nastroeniya_jok_kezde')showGolodnyakLight(targetId);
+    if(completed&&gift.id==='soguunu_toktotkula')showGolodnyakLight(targetId);
+    if(completed&&gift.id==='pokazhite_pozhaluysta')showGolodnyakLight(targetId);
+    if(completed&&gift.id==='maimyl_dosken')showBananaCar(targetId);
+    if(completed&&gift.id==='kandaisyn_doske_joop')showDonkeyCarPoop(targetId);
+    if(completed&&gift.id==='meni_jebechi')showGolodnyakLight(targetId);
+    if(completed&&(gift.id?.startsWith('batch_')||gift.id?.startsWith('new_')))showBatchPostEffect(gift,targetId,targetEl);
+    nextGiftVideo();
+  },480)};
+  soundButtons.forEach(btn=>btn.addEventListener('click',toggleSound));
+  stage.querySelector('.giftVideoHide')?.addEventListener('click',()=>{stage.classList.add('giftVideoLocallyHidden');restore.classList.add('active');chat.classList.remove('giftVideoActive')});
+  restore.querySelector('.giftVideoShow')?.addEventListener('click',()=>{stage.classList.remove('giftVideoLocallyHidden');restore.classList.remove('active');chat.classList.add('giftVideoActive')});
+  if(v){
+    v.currentTime=0;v.muted=false;syncSound();
+    v.play().catch(()=>{if(finished)return;v.muted=true;syncSound();v.play().catch(()=>{
+      if(finished)return;const retry=document.createElement('button');retry.className='giftVideoShow giftVideoRetry';retry.textContent='Воспроизвести';
+      retry.onclick=()=>v.play().then(()=>retry.remove()).catch(()=>{});stage.appendChild(retry);
+    })});
+    v.addEventListener('ended',()=>{if(v.ended)end(true)},{once:true});
+    v.addEventListener('error',()=>setTimeout(end,1200),{once:true});
+  }
+}
+function playGiftEvent(event){
+  const gift=giftCatalog().find(g=>g.id===event.gift)||{id:event.gift,name:event.gift,emoji:event.emoji||GIFT_EMOJI[event.gift]||'🎁',cost:event.cost||0,epic:Boolean(event.epic),effect:'pop'};
+  if(gift.id==='lion'){showPremiumLionGift(event.fromName||nameOf(event.from),event.toName||nameOf(event.to));return;}
+  if(gift.id==='kyrgyz_warrior'){showKyrgyzWarriorGift(event.fromName||nameOf(event.from),event.toName||nameOf(event.to));return;}
+  if(gift.id==='aurakg'){showAurakgGift(event.fromName||nameOf(event.from),event.toName||nameOf(event.to));return;}
+  if(gift.id==='bauri_vip'){if(String(event.from)===String(playerId)&&Date.now()-(window.__bauriLocalSentAt||0)<20000)return;showBauriVipGift(event.fromName||nameOf(event.from),event.toName||nameOf(event.to),event.to,giftElForPlayer(event.to));return;}
+  if(gift.id!=='kolunan_emne_kelet'){kolunanStickerPlayers.delete(String(event.to));giftElForPlayer(event.to)?.querySelector('.kolunanSticker')?.remove();}
+  if(gift.id==='kolunan_emne_kelet'){
+    kolunanStickerPlayers.delete(String(event.to));giftElForPlayer(event.to)?.querySelector('.kolunanSticker')?.remove();
+    showSeniSuyomGift(gift,event.fromName||nameOf(event.from),event.toName||nameOf(event.to),event.to,giftElForPlayer(event.to));return;
+  }
+  const sourceEl=giftElForPlayer(event.from),targetEl=giftElForPlayer(event.to);
+  const a=giftPoint(sourceEl,giftFallbackSource()),b=giftPoint(targetEl,giftFallbackTarget()),dx=b.x-a.x,dy=b.y-a.y;
+  const flight=document.createElement('div');flight.className=`giftflight effect-${gift.effect||'pop'} ${gift.epic?'epic':''}`;flight.textContent=gift.emoji||'🎁';flight.style.left=a.x+'px';flight.style.top=a.y+'px';document.body.appendChild(flight);giftSoundPlay(false);
+  const finish=()=>{flight.remove();giftBurst(gift,b);giftImpact(gift,targetEl);if(targetEl){if(gift.effect==='hat'){let hat=targetEl.querySelector('.wearableGift');if(!hat){hat=document.createElement('i');hat.className='wearableGift';targetEl.appendChild(hat)}hat.textContent=gift.emoji||'🎩';const side=((String(event.to||'').charCodeAt(0)||0)%2)?'right':'left';hat.dataset.side=side;hat.classList.remove('wearableDrop');void hat.offsetWidth;hat.classList.add('wearableDrop')}else{let corner=targetEl.querySelector('.giftCorner');if(!corner){corner=document.createElement('i');corner.className='giftCorner';targetEl.appendChild(corner)}corner.textContent=gift.emoji||'🎁'}targetEl.classList.remove('gift-hit');void targetEl.offsetWidth;targetEl.classList.add('gift-hit');setTimeout(()=>targetEl.classList.remove('gift-hit'),900)}if(gift.videoUrl)showSeniSuyomGift(gift,event.fromName||nameOf(event.from),event.toName||nameOf(event.to),event.to,targetEl);else if(gift.epic)showEpicGift(gift,event.fromName||nameOf(event.from),event.toName||nameOf(event.to))};
+  if(flight.animate){const effect=gift.effect||'pop';let frames=[{transform:'translate3d(0,0,0) translate(-50%,-50%) scale(.45) rotate(-14deg)',opacity:.2},{transform:`translate3d(${dx*.52}px,${dy*.52-95}px,0) translate(-50%,-50%) scale(${gift.epic?1.8:1.22}) rotate(10deg)`,opacity:1},{transform:`translate3d(${dx}px,${dy}px,0) translate(-50%,-50%) scale(.8) rotate(0)`,opacity:1}];if(['smack','splat'].includes(effect))frames=[{transform:'translate3d(0,0,0) translate(-50%,-50%) scale(.5) rotate(-45deg)',opacity:.2},{transform:`translate3d(${dx*.7}px,${dy*.55-40}px,0) translate(-50%,-50%) scale(1.65) rotate(35deg)`,opacity:1},{transform:`translate3d(${dx}px,${dy}px,0) translate(-50%,-50%) scale(.95) rotate(${effect==='smack'?'110deg':'0deg'})`,opacity:1}];if(effect==='spin')frames=[{transform:'translate3d(0,0,0) translate(-50%,-50%) scale(.45) rotate(0)',opacity:.2},{transform:`translate3d(${dx*.55}px,${dy*.45-80}px,0) translate(-50%,-50%) scale(1.35) rotate(540deg)`,opacity:1},{transform:`translate3d(${dx}px,${dy}px,0) translate(-50%,-50%) scale(.82) rotate(900deg)`,opacity:1}];if(['luxury','cosmic','speed'].includes(effect))frames=[{transform:'translate3d(0,40px,0) translate(-50%,-50%) scale(.3)',opacity:0},{transform:`translate3d(${dx*.55}px,${dy*.45-120}px,0) translate(-50%,-50%) scale(1.65)`,opacity:1,filter:'drop-shadow(0 0 30px #ffd75a)'},{transform:`translate3d(${dx}px,${dy}px,0) translate(-50%,-50%) scale(1)`,opacity:1,filter:'drop-shadow(0 0 12px #fff)'}];const anim=flight.animate(frames,{duration:gift.epic?1450:980,easing:'cubic-bezier(.16,.8,.22,1)',fill:'forwards'});anim.onfinish=finish}else setTimeout(finish,1000)
+}
+function processGiftEvents(v,first=false){const gifts=(v?.feed||[]).filter(e=>e.kind==='gift');const latest=gifts.reduce((m,e)=>Math.max(m,Number(e.id)||0),0);if(first||giftEventCursor==null){giftEventCursor=latest;return}const fresh=gifts.filter(e=>(Number(e.id)||0)>giftEventCursor).sort((a,b)=>a.id-b.id);giftEventCursor=Math.max(giftEventCursor,latest);fresh.forEach((e,i)=>setTimeout(()=>playGiftEvent(e),i*260))}
+function sendSelectedGift(){if(selectedSlot==null||!selectedGiftId)return;const gift=giftCatalog().find(g=>g.id===selectedGiftId);if(!gift)return;if(selectedPlayer?.self||selectedPlayer?.id===playerId){toast(tr('self'));return}if(isDemoMode()){const bal=getHeartBalance();if(bal<gift.cost){toast(`Нужно ♥ ${gift.cost}`);return}setHeartBalance(bal-gift.cost);const targetId=selectedPlayer?.id||`demo-${selectedSlot}`;const event={id:Date.now(),kind:'gift',from:playerId,to:targetId,fromName:'Player 1',toName:selectedPlayer?.name||'Игрок',gift:gift.id,cost:gift.cost,emoji:gift.emoji,epic:gift.epic};closePlayerSheet();playGiftEvent(event);toast(`${gift.name} отправлен · −${gift.cost} ♥`);return}if(!selectedTarget){toast('Выберите игрока');return}send({type:'gift',gift:gift.id,to:selectedTarget});closePlayerSheet()}
+function applyLang(){const spin=$('#spin'),msg=$('#msg'),guest=$('#guestLabel'),balcony=$('#balconyLabel'),langCode=$('#langCode');if(spin)spin.textContent=tr('spin');if(msg)msg.placeholder=tr('msg');if(guest)guest.textContent=tr('guests');if(balcony)balcony.textContent=tr('balcony');if(langCode)langCode.textContent=({ru:'RU',ky:'KY',kk:'KZ',uz:'UZ',en:'EN'})[lang]||'RU';if(lastMsg)render(lastMsg)}applyLang();
+const loadProfilePhotos=()=>{const self=document.querySelector('.person.self');const fallback=self?.querySelector('img')?.src||photoFor(playerId,1);const main=localStorage.getItem('kissmeet.profile.main')||fallback;$('#profilePhotoMain').style.backgroundImage=`url("${main}")`;document.querySelectorAll('.profilePhotoExtra').forEach((btn,i)=>{const v=localStorage.getItem(`kissmeet.profile.extra${i+1}`)||'';btn.style.backgroundImage=v?`url("${v}")`:'';btn.classList.toggle('hasPhoto',!!v)});$('#profileDisplayName').value=localStorage.getItem('kissmeet.profile.name')||'Player 1';$('#profileBirthDate').value=localStorage.getItem('kissmeet.profile.birth')||'';const g=localStorage.getItem('kissmeet.profile.gender')||'';document.querySelectorAll('[data-gender]').forEach(b=>b.classList.toggle('active',b.dataset.gender===g))};const openSettings=()=>{$('#settingsMenuView').classList.remove('hidden');$('#settingsProfileView').classList.add('hidden');$('#settingsLanguageView').classList.add('hidden');const soundOn=localStorage.getItem('kissmeet.sound')!=='off';const musicOn=localStorage.getItem('kissmeet.music')!=='off';$('#soundToggle').classList.toggle('active',soundOn);$('#musicToggle').classList.toggle('active',musicOn);$('#settingsOverlay').classList.remove('hidden')};const closeSettings=()=>$('#settingsOverlay').classList.add('hidden');$('#settingsBtn').onclick=openSettings;$('#settingsClose').onclick=closeSettings;$('#settingsBackdrop').onclick=closeSettings;$('#soundToggle').onclick=()=>{const on=!$('#soundToggle').classList.contains('active');$('#soundToggle').classList.toggle('active',on);localStorage.setItem('kissmeet.sound',on?'on':'off');toast(on?L().soundOn:L().soundOff)};$('#musicToggle').onclick=()=>{const on=!$('#musicToggle').classList.contains('active');$('#musicToggle').classList.toggle('active',on);localStorage.setItem('kissmeet.music',on?'on':'off');toast(on?L().musicOn:L().musicOff)};$('#inviteFriendsBtn').onclick=async()=>{const text='Присоединяйся ко мне в «Целуй и знакомься»!';try{if(navigator.share)await navigator.share({title:'Целуй и знакомься',text,url:location.href});else{await navigator.clipboard.writeText(location.href);toast(L().copied)}}catch{}};$('#logoutBtn').onclick=()=>toast(L().exitDemo);$('#profileSettingsBtn').onclick=()=>{$('#settingsMenuView').classList.add('hidden');$('#settingsProfileView').classList.remove('hidden');loadProfilePhotos()};$('#settingsProfileBack').onclick=()=>{$('#settingsProfileView').classList.add('hidden');$('#settingsMenuView').classList.remove('hidden')};$('#settingsProfileClose').onclick=closeSettings;let profilePhotoTarget='main';$('#profilePhotoMain').onclick=()=>{profilePhotoTarget='main';$('#profilePhotoInput').click()};document.querySelectorAll('.profilePhotoExtra').forEach(btn=>btn.onclick=()=>{profilePhotoTarget='extra'+btn.dataset.photoSlot;$('#profilePhotoInput').click()});$('#profilePhotoInput').onchange=e=>{const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=()=>{localStorage.setItem(`kissmeet.profile.${profilePhotoTarget}`,r.result);loadProfilePhotos()};r.readAsDataURL(f);e.target.value=''};document.querySelectorAll('[data-gender]').forEach(btn=>btn.onclick=()=>document.querySelectorAll('[data-gender]').forEach(b=>b.classList.toggle('active',b===btn)));$('#profileSettingsSave').onclick=()=>{const displayName=($('#profileDisplayName').value||'').trim().slice(0,24);localStorage.setItem('kissmeet.profile.name',displayName);localStorage.setItem('kissmeet.profile.birth',$('#profileBirthDate').value||'');const g=document.querySelector('[data-gender].active')?.dataset.gender||'';localStorage.setItem('kissmeet.profile.gender',g);const main=localStorage.getItem('kissmeet.profile.main');const selfImg=document.querySelector('.person.self .photo img');if(main&&selfImg)selfImg.src=main;const selfName=document.querySelector('.person.self .name');if(selfName&&displayName)selfName.textContent=displayName;toast(L().saved);$('#settingsProfileView').classList.add('hidden');$('#settingsMenuView').classList.remove('hidden')};
+function demoSpin(){
+  if(demoSpinning||heartDuelOpen)return;
+  const self=document.querySelector('.person.self');
+  const candidates=[...document.querySelectorAll('.person:not(.self)')];
+  if(!self||!candidates.length)return;
+  demoSpinning=true;
+  $('#spin').disabled=true;
+  const pick=candidates[Math.floor(Math.random()*candidates.length)];
+  const slot=Number(pick.dataset.slot||0),pos=POS[slot]||[50,10];
+  const targetDeg=Math.atan2(pos[1]-50,pos[0]-50)*180/Math.PI;
+  demoAngle+=1440+((targetDeg-demoAngle)%360+360)%360;
+  $('#bottle').style.transform=`rotate(${demoAngle}deg)`;
+  $('#turnText').textContent='Крутим…';
+  setTimeout(()=>{
+    document.querySelectorAll('.person.demoPick').forEach(n=>n.classList.remove('demoPick'));
+    pick.classList.add('demoPick');
+    $('#turnText').textContent=`Сердце выбрало ${pick.querySelector('.name')?.textContent||'Игрок'}`;
+    demoSpinning=false;$('#spin').disabled=false;
+    openHeartDuel(self,pick);
+  },2200);
+}
+function handleSpin(){
+  if(isDemoMode()){demoSpin();return}
+  send({type:'spin'});
+}
+$('#spin').onclick=handleSpin;
+let chatReplyTarget=null;
+$('#send').onclick=()=>{const i=$('#msg'),x=i.value.trim();if(x){send({type:'chat',text:x,toPlayerId:chatReplyTarget?.id||null,toPlayerName:chatReplyTarget?.name||null});i.value='';chatReplyTarget=null}};
+$('#msg').onkeydown=e=>{if(e.key==='Enter')$('#send').click()};
+$('#sheetGiftbar').onclick=e=>{const b=e.target.closest('[data-gift]');if(!b)return;if(selectedPlayer?.self||selectedPlayer?.id===playerId){toast(tr('self'));return}selectedGiftId=b.dataset.gift;b.classList.add('giftSending');try{navigator.vibrate?.([18,24,18])}catch{}if(selectedGiftId==='lion'){startLionGiftSoundFromGesture();setTimeout(()=>sendSelectedGift(),140)}else if(selectedGiftId==='kyrgyz_warrior'){startKyrgyzWarriorSoundFromGesture();setTimeout(()=>sendSelectedGift(),90)}else if(selectedGiftId==='aurakg'){startAurakgSoundFromGesture();setTimeout(()=>sendSelectedGift(),90)}else if(selectedGiftId==='bauri_vip'){const g=giftCatalog().find(x=>x.id==='bauri_vip'),tid=isDemoMode()?(selectedPlayer?.id||`demo-${selectedSlot}`):selectedTarget,te=giftElForPlayer(tid)||document.querySelector(`.person[data-slot="${selectedSlot}"] .photo`);if(g&&tid&&currentGiftBalance()>=g.cost){window.__bauriLocalSentAt=Date.now();showBauriVipGift(document.querySelector('.person.self .name')?.textContent||'Player 1',selectedPlayer?.name||'Игрок',tid,te,{fromGesture:true})}setTimeout(()=>sendSelectedGift(),90)}else setTimeout(()=>sendSelectedGift(),90)};
+$('#giftTabs').onclick=e=>{const b=e.target.closest('[data-gift-cat]');if(!b)return;giftCategory=b.dataset.giftCat;document.querySelectorAll('#giftTabs [data-gift-cat]').forEach(x=>x.classList.toggle('active',x===b));selectedGiftId=null;renderGiftCatalog()};
+$('#giftTopup').onclick=()=>{if(isDemoMode()){setHeartBalance(getHeartBalance()+1000);renderGiftCatalog();toast('+1000 ♥ добавлено')}else{send({type:'topup'});toast('Баланс пополнен на 1000 ♥')}};
+$('#giftSound').onclick=()=>{const muted=localStorage.getItem('kissmeet.giftSound')==='0';localStorage.setItem('kissmeet.giftSound',muted?'1':'0');$('#giftSound').textContent=muted?'🔊':'🔇'};
+$('#giftSound').textContent=localStorage.getItem('kissmeet.giftSound')==='0'?'🔇':'🔊';
+
+$('#sheetClose').onclick=closePlayerSheet;$('#sheetBackdrop').onclick=closePlayerSheet;$('#profileClose').onclick=closePlayerProfile;$('#profileBackdrop').onclick=closePlayerProfile;$('#profileGallery').onclick=e=>{const b=e.target.closest('[data-src]');if(!b)return;$('#profileHero').style.backgroundImage=`url("${b.dataset.src}")`;document.querySelectorAll('.profileThumb').forEach(x=>x.classList.toggle('active',x===b))};
+const premiumBtn=$('#premiumBtn');if(premiumBtn){premiumBtn.onclick=()=>{premium=true;localStorage.setItem('kissmeet.premium','1');premiumBtn.classList.add('active');premiumBtn.textContent='Premium ✓'};if(premium)premiumBtn.click()}else{premium=true;}
+let ytTab='popular';
+function ytFavorites(){try{return JSON.parse(localStorage.getItem('kissmeet.ytFav')||'[]')}catch{return[]}}
+function ytHistory(){try{return JSON.parse(localStorage.getItem('kissmeet.ytHistory')||'[]')}catch{return[]}}
+function setYtFavorites(x){localStorage.setItem('kissmeet.ytFav',JSON.stringify(x.slice(0,40)))}
+function setYtHistory(x){localStorage.setItem('kissmeet.ytHistory',JSON.stringify(x.slice(0,20)))}
+function renderYoutubeLibrary(){const fav=ytFavorites(),hist=ytHistory(),q=$('#ytSearchInput').value.trim().toLowerCase();let list=YT_CATALOG;if(ytTab==='favorites')list=YT_CATALOG.filter(v=>fav.includes(v.id));else if(ytTab==='history')list=hist.map(id=>YT_CATALOG.find(v=>v.id===id)).filter(Boolean);else if(ytTab==='search')list=YT_CATALOG.filter(v=>v.title.toLowerCase().includes(q));$('#ytLibraryTitle').textContent=ytTab==='favorites'?'Избранное':ytTab==='history'?'Недавно смотрели':ytTab==='search'?'Поиск видео':'Поставить видео из популярного';$('#ytSearchRow').classList.toggle('hidden',ytTab!=='search');const box=$('#ytGrid');box.innerHTML='';if(!list.length){box.innerHTML='<div class="ytEmpty">Здесь пока пусто</div>';return}for(const v of list){const card=document.createElement('button');card.className='ytCard';card.type='button';card.innerHTML=`<span class="ytThumbWrap"><img class="ytThumb" src="https://i.ytimg.com/vi/${v.id}/hqdefault.jpg" alt=""><span class="ytDuration">${v.duration}</span><span class="ytStar ${fav.includes(v.id)?'saved':''}" data-fav="${v.id}">★</span></span><span class="ytCardTitle">${esc(v.title)}</span>`;card.onclick=e=>{const star=e.target.closest('[data-fav]');if(star){e.stopPropagation();let f=ytFavorites();f=f.includes(v.id)?f.filter(x=>x!==v.id):[v.id,...f];setYtFavorites(f);renderYoutubeLibrary();return}selectYoutubeVideo(v)};box.appendChild(card)}}
+function openYoutubeLibrary(){ytTab='popular';$('#youtubeLibrary').classList.remove('hidden');document.body.classList.add('modalOpen');for(const b of document.querySelectorAll('.ytTab'))b.classList.toggle('active',b.dataset.ytTab==='popular');renderYoutubeLibrary()}
+function closeYoutubeLibrary(){$('#youtubeLibrary').classList.add('hidden');document.body.classList.remove('modalOpen')}
+function selectYoutubeVideo(v){const url=`https://www.youtube.com/watch?v=${v.id}`;showMedia({kind:'youtube',url},v.title);const history=[v.id,...ytHistory().filter(x=>x!==v.id)];setYtHistory(history);const mine=lastMsg?.seats?.includes(playerId)&&Number(profile(playerId).mediaUnlocks||0)>0;if(mine)send({type:'setVideo',kind:'youtube',url});closeYoutubeLibrary()}
+
+$('#youtubeBtn').onclick=()=>{openYoutubeLibrary();toast('YouTube открыт')};
+$('#themeBtn')?.addEventListener('click',openThemePicker);
+$('#themeClose')?.addEventListener('click',closeThemePicker);
+$('#themeBackdrop')?.addEventListener('click',closeThemePicker);
+$('#themeBack')?.addEventListener('click',renderThemeRoot);
+$('#customThemeBtn')?.addEventListener('click',()=>{
+  if(getHeartBalance()<CUSTOM_BG_COST){toast(`Нужно ${CUSTOM_BG_COST} ♥`);return}
+  const input=$('#customBgFile');if(!input)return;
+  input.value='';input.click();
+});
+$('#customBgFile')?.addEventListener('change',e=>chooseCustomBackground(e.target.files?.[0]));
+const tg=$('#themeGrid');
+if(tg){
+  tg.onclick=e=>{
+    const b=e.target.closest('[data-theme-id]');
+    if(!b)return;
+    applyTheme(b.dataset.themeId);
+    localStorage.removeItem('kissmeet.place');
+    closeThemePicker();
+  };
+}
+const savedTheme=localStorage.getItem('kissmeet.theme')||'dark';
+const savedPlace=localStorage.getItem('kissmeet.place');
+if(savedTheme==='custom'){
+  const customBg=localStorage.getItem('kissmeet.customBg');
+  if(customBg)applyCustomTheme(customBg); else applyTheme('dark');
+}else if(savedTheme==='city'&&savedPlace){
+  const place=ROMANTIC_PLACES.find(x=>x.id===savedPlace);
+  if(place)applyPlaceTheme(place); else applyTheme(savedTheme);
+}else applyTheme(savedTheme);
+syncHeartBalance();
+renderThemeRoot();
+$('#ytClose').onclick=closeYoutubeLibrary;$('#ytBackdrop').onclick=closeYoutubeLibrary;$('.ytTabs').onclick=e=>{const b=e.target.closest('[data-yt-tab]');if(!b)return;ytTab=b.dataset.ytTab;for(const x of document.querySelectorAll('.ytTab'))x.classList.toggle('active',x===b);renderYoutubeLibrary();if(ytTab==='search')setTimeout(()=>$('#ytSearchInput').focus(),0)};$('#ytSearchInput').oninput=renderYoutubeLibrary;$('#closeMedia').onclick=()=>{$('#mediaBox').classList.add('hidden');$('#chatArea').classList.remove('mediaActive');$('#videoFrame').innerHTML='🎬'};$('#uploadBtn').onclick=()=>{const f=$('#file');if(!f)return toast('Загрузка видео недоступна');toast('Выберите видео');f.click()};$('#file').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{const r=await fetch('/api/upload-media',{method:'POST',headers:{'content-type':f.type||'video/mp4'},body:f});if(!r.ok)throw 0;const j=await r.json();send({type:'setVideo',kind:'upload',url:j.url});$('#mediaBox').classList.remove('hidden')}catch{toast('Ошибка загрузки')}e.target.value=''};$('#headphonesBtn').onclick=async()=>{const btn=$('#headphonesBtn');if(btn.classList.contains('liveVoice')){window.liveVoiceStream?.getTracks().forEach(t=>t.stop());window.liveVoiceStream=null;btn.classList.remove('liveVoice');toast('Живой разговор выключен');return}try{const stream=await navigator.mediaDevices.getUserMedia({audio:true});window.liveVoiceStream=stream;btn.classList.add('liveVoice');toast('Живой разговор активирован')}catch{toast('Микрофон недоступен')}};let voiceStartedAt=0,voiceTimer=null,pendingVoiceBlob=null,voiceStream=null;
+function showVoiceComposer(on){$('#voiceComposer').classList.toggle('hidden',!on);$('#msg').classList.toggle('hidden',on);$('#send').classList.toggle('hidden',on);$('#voiceBtn').classList.toggle('hidden',on)}
+function voiceTick(){const sec=Math.max(0,Math.floor((Date.now()-voiceStartedAt)/1000));$('#voiceTime').textContent=`${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')}`}
+function resetVoiceComposer(){clearInterval(voiceTimer);voiceTimer=null;voiceStartedAt=0;pendingVoiceBlob=null;voiceStream?.getTracks().forEach(t=>t.stop());voiceStream=null;$('#voiceTime').textContent='0:00';$('#voiceStop').classList.remove('hidden');$('#voiceSend').classList.add('hidden');showVoiceComposer(false);$('#voiceBtn').classList.remove('recording')}
+$('#voiceBtn').onclick=async()=>{try{voiceStream=await navigator.mediaDevices.getUserMedia({audio:true});chunks=[];recorder=new MediaRecorder(voiceStream);recorder.ondataavailable=e=>e.data.size&&chunks.push(e.data);recorder.onstop=()=>{pendingVoiceBlob=new Blob(chunks,{type:recorder.mimeType||'audio/webm'});voiceStream?.getTracks().forEach(t=>t.stop());voiceStream=null;$('#voiceStop').classList.add('hidden');$('#voiceSend').classList.remove('hidden')};recorder.start();voiceStartedAt=Date.now();voiceTick();voiceTimer=setInterval(voiceTick,250);showVoiceComposer(true);$('#voiceBtn').classList.add('recording')}catch{toast('Микрофон недоступен')}};
+$('#voiceStop').onclick=()=>{if(recorder?.state==='recording'){clearInterval(voiceTimer);voiceTimer=null;recorder.stop();$('#voiceBtn').classList.remove('recording')}};
+$('#voiceCancel').onclick=()=>{try{if(recorder?.state==='recording')recorder.stop()}catch{}resetVoiceComposer()};
+$('#voiceSend').onclick=async()=>{if(!pendingVoiceBlob)return;try{const r=await fetch('/api/upload-media',{method:'POST',headers:{'content-type':pendingVoiceBlob.type||'audio/webm'},body:pendingVoiceBlob});if(!r.ok)throw 0;const j=await r.json();send({type:'voice',url:j.url});resetVoiceComposer()}catch{toast('Не удалось отправить голосовое')}};
+
+// Canonical heart choice implementation.
+let heartDuelTimer=null;
+let heartDuelOpen=false;
+let heartDuelSources=[];
+let heartDuelChoice=null;
+let heartDuelPartnerChoice=null;
+let heartDuelResultTimer=null;
+function playerSnapshot(el){
+  if(!el)return null;
+  const img=el.querySelector('.photo img');
+  return {name:(el.querySelector('.name')?.textContent||'Игрок').trim(),photo:img?.currentSrc||img?.src||'',el};
+}
+function duelVisualMarkup(kind,{mutual=false,preview=false}={}){
+  const isKiss=kind==='kiss';
+  const colorClass=isKiss?'kiss':'slap';
+  const topIcon=isKiss?'💗':'✕';
+  const fx=isKiss?'💗':'✋';
+  const label=mutual&&isKiss?'ВЗАИМНАЯ СИМПАТИЯ!':(isKiss?'СИМПАТИЯ!':'ОТШЛЕПАЛИ!');
+  const bottomArc=mutual&&isKiss?`<svg class="duelArc duelArcBottom" viewBox="0 0 280 120" aria-hidden="true"><path class="duelArcShadow" d="M252 26 C212 108 68 108 28 26"/><path class="duelArcLine" d="M252 26 C212 108 68 108 28 26"/><path class="duelArrowHead" d="M45 44 L22 26 L49 19 Z"/><circle class="duelBadge" cx="140" cy="94" r="20"/><text class="duelBadgeText" x="140" y="101" text-anchor="middle">💋</text></svg>`:'';
+  return `<div class="duelResultVisual ${colorClass} ${preview?'preview':''} ${mutual?'mutual':''}" aria-label="${label}">
+    <svg class="duelArc duelArcTop" viewBox="0 0 280 120" aria-hidden="true">
+      <path class="duelArcShadow" d="M28 94 C68 12 212 12 252 94"/>
+      <path class="duelArcLine" d="M28 94 C68 12 212 12 252 94"/>
+      <path class="duelArrowHead" d="M235 76 L258 94 L231 101 Z"/>
+      <circle class="duelBadge" cx="140" cy="26" r="20"/>
+      <text class="duelBadgeText" x="140" y="33" text-anchor="middle">${topIcon}</text>
+    </svg>${bottomArc}
+    <div class="duel3dFx targetRight"><span class="fxMain">${fx}</span><span class="fxImpact">${isKiss?'❤':'💥'}</span><span class="fxSpark s1">${isKiss?'❤':'✦'}</span><span class="fxSpark s2">${isKiss?'❤':'✦'}</span><span class="fxSpark s3">${isKiss?'❤':'✦'}</span></div>
+    ${preview?'':`<div class="duelResultLabel">${label}</div>`}
+  </div>`;
+}
+function clearDuelPreview(){
+  const duel=$('#heartDuel');duel?.classList.remove('choicePreview');
+  const note=$('#heartDuelNote');if(note){note.classList.add('hidden');note.innerHTML=''}
+}
+function showDuelPreview(kind){
+  if(!heartDuelOpen)return;
+  const duel=$('#heartDuel');duel.classList.add('choicePreview');duel.classList.remove('resultMode','kissResult','slapResult');
+  const note=$('#heartDuelNote');note.innerHTML=duelVisualMarkup(kind,{preview:true});note.classList.remove('hidden');
+}
+function closeHeartDuel(){
+  clearInterval(heartDuelTimer);heartDuelTimer=null;
+  clearTimeout(heartDuelResultTimer);heartDuelResultTimer=null;
+  heartDuelOpen=false;heartDuelChoice=null;heartDuelPartnerChoice=null;
+  heartDuelSources.forEach(el=>el?.classList.remove('heartDuelSource'));heartDuelSources=[];
+  const duel=$('#heartDuel');duel?.classList.add('hidden');duel?.classList.remove('choicePreview','resultMode','kissResult','slapResult');
+  const note=$('#heartDuelNote');if(note){note.classList.add('hidden');note.innerHTML=''}
+  $('#heartDuelKiss').disabled=false;$('#heartDuelSlap').disabled=false;
+  document.body.classList.remove('heartDuelActive');
+  document.querySelector('.person.demoPick')?.classList.remove('demoPick');
+  if($('#turnText'))$('#turnText').textContent='Демо — крутите сердце';
+}
+function showHeartDuelResult(kind=heartDuelChoice,{mutual=false}={}){
+  if(!heartDuelOpen||!kind){closeHeartDuel();return}
+  clearInterval(heartDuelTimer);heartDuelTimer=null;
+  clearTimeout(heartDuelResultTimer);
+  const duel=$('#heartDuel');
+  const isKiss=kind==='kiss';
+  duel.classList.remove('choicePreview');
+  duel.classList.add('resultMode',isKiss?'kissResult':'slapResult');
+  const note=$('#heartDuelNote');
+  note.innerHTML=duelVisualMarkup(kind,{mutual});
+  note.classList.remove('hidden');
+  heartDuelResultTimer=setTimeout(closeHeartDuel,3000);
+}
+function finishHeartDuelAtTimeout(){
+  if(!heartDuelOpen)return;
+  if(!heartDuelChoice){closeHeartDuel();return}
+  const mutual=heartDuelChoice==='kiss'&&heartDuelPartnerChoice==='kiss';
+  showHeartDuelResult(heartDuelChoice,{mutual});
+}
+function openHeartDuel(meEl,targetEl){
+  if(heartDuelOpen||!meEl||!targetEl||meEl===targetEl)return;
+  const me=playerSnapshot(meEl),target=playerSnapshot(targetEl);if(!me||!target)return;
+  heartDuelOpen=true;heartDuelChoice=null;heartDuelPartnerChoice=null;heartDuelSources=[meEl,targetEl];
+  meEl.classList.add('heartDuelSource');targetEl.classList.add('heartDuelSource');
+  $('#heartDuelMePhoto').style.backgroundImage=me.photo?`url("${me.photo}")`:'none';
+  $('#heartDuelTargetPhoto').style.backgroundImage=target.photo?`url("${target.photo}")`:'none';
+  $('#heartDuelMeName').textContent=me.name;$('#heartDuelTargetName').textContent=target.name;
+  $('#heartDuelKiss').disabled=false;$('#heartDuelSlap').disabled=false;
+  clearDuelPreview();
+  const duel=$('#heartDuel');duel.classList.remove('resultMode','kissResult','slapResult');
+  let sec=9;$('#heartDuelSeconds').textContent='9';
+  duel.classList.remove('hidden');document.body.classList.add('heartDuelActive');
+  clearInterval(heartDuelTimer);
+  heartDuelTimer=setInterval(()=>{sec--;$('#heartDuelSeconds').textContent=String(Math.max(sec,0));if(sec<=0){clearInterval(heartDuelTimer);heartDuelTimer=null;finishHeartDuelAtTimeout()}},1000);
+}
+function chooseHeartDuel(kind){
+  if(!heartDuelOpen||heartDuelChoice)return;
+  heartDuelChoice=kind;
+  if(kind==='kiss'){heartDuelSources.forEach(el=>{const id=el?.dataset?.playerId;kolunanStickerPlayers.delete(String(id||''));giftElForPlayer(id)?.querySelector('.kolunanSticker')?.remove();});}
+  $('#heartDuelKiss').disabled=true;$('#heartDuelSlap').disabled=true;
+  showDuelPreview(kind);
+  if(kind==='kiss'&&heartDuelPartnerChoice==='kiss')showHeartDuelResult('kiss',{mutual:true});
+}
+function receiveHeartDuelPartnerChoice(kind){
+  if(!heartDuelOpen||!['kiss','slap'].includes(kind))return;
+  heartDuelPartnerChoice=kind;
+  if(heartDuelChoice==='kiss'&&kind==='kiss')showHeartDuelResult('kiss',{mutual:true});
+}
+window.receiveHeartDuelPartnerChoice=receiveHeartDuelPartnerChoice;
+$('#heartDuelKiss').onclick=()=>chooseHeartDuel('kiss');
+$('#heartDuelSlap').onclick=()=>chooseHeartDuel('slap');
+
+
+// App language selector
+const APP_I18N={
+ru:{settings:'Настройки',sounds:'Звуки',music:'Музыка',invite:'Пригласить друзей',profileSettings:'Настройки профиля',language:'Язык',logout:'Выйти',profile:'Профиль',mainPhoto:'Главное фото',addPhoto:'+ Фото',name:'Имя',yourName:'Ваше имя',birth:'Дата рождения',gender:'Пол',male:'Мужской',female:'Женский',saveProfile:'Сохранить профиль',spin:'Крутить',waiting:'Ждём следующего хода',write:'Написать сообщение',gifts:'Подарки',send:'Отправить',chooseGift:'Выберите подарок',topup:'Пополнение счета',popular:'Популярные',friends:'суйуу',fun:'Приколы',style:'vibe',food:'aitysh duinosu',vip:'насаат',epic:'молодеж kg',tiktok:'TikTok',chooseTheme:'Выбери тему фона',customBg:'Свой фон',romantic:'Романтичные места',soundOn:'Звуки включены',soundOff:'Звуки выключены',musicOn:'Музыка включена',musicOff:'Музыка выключена',saved:'Профиль сохранён',copied:'Ссылка скопирована',exitDemo:'Выход — демо',table:'Стол'},
+ky:{settings:'Жөндөөлөр',sounds:'Үндөр',music:'Музыка',invite:'Досторду чакыруу',profileSettings:'Профиль жөндөөлөрү',language:'Тил',logout:'Чыгуу',profile:'Профиль',mainPhoto:'Негизги сүрөт',addPhoto:'+ Сүрөт',name:'Аты',yourName:'Атыңыз',birth:'Туулган күнү',gender:'Жынысы',male:'Эркек',female:'Аял',saveProfile:'Профилди сактоо',spin:'Айлантуу',waiting:'Кийинки жүрүштү күтөбүз',write:'Билдирүү жазуу',gifts:'Белектер',send:'Жөнөтүү',chooseGift:'Белек тандаңыз',topup:'Баланс толтуруу',popular:'Популярдуу',friends:'суйуу',fun:'Тамаша',style:'vibe',food:'aitysh duinosu',vip:'насаат',epic:'молодеж kg',tiktok:'TikTok',chooseTheme:'Фон темасын тандаңыз',customBg:'Өз фонуңуз',romantic:'Романтикалык жерлер',soundOn:'Үндөр күйгүзүлдү',soundOff:'Үндөр өчүрүлдү',musicOn:'Музыка күйгүзүлдү',musicOff:'Музыка өчүрүлдү',saved:'Профиль сакталды',copied:'Шилтеме көчүрүлдү',exitDemo:'Чыгуу — демо',table:'Стол'},
+uz:{settings:'Sozlamalar',sounds:'Ovozlar',music:'Musiqa',invite:'Do‘stlarni taklif qilish',profileSettings:'Profil sozlamalari',language:'Til',logout:'Chiqish',profile:'Profil',mainPhoto:'Asosiy surat',addPhoto:'+ Surat',name:'Ism',yourName:'Ismingiz',birth:'Tug‘ilgan sana',gender:'Jins',male:'Erkak',female:'Ayol',saveProfile:'Profilni saqlash',spin:'Aylantirish',waiting:'Keyingi yurishni kutamiz',write:'Xabar yozish',gifts:'Sovg‘alar',send:'Yuborish',chooseGift:'Sovg‘ani tanlang',topup:'Hisobni to‘ldirish',popular:'Mashhur',friends:'суйуу',fun:'Hazillar',style:'vibe',food:'aitysh duinosu',vip:'насаат',epic:'молодеж kg',tiktok:'TikTok',chooseTheme:'Fon mavzusini tanlang',customBg:'O‘z foningiz',romantic:'Romantik joylar',soundOn:'Ovozlar yoqildi',soundOff:'Ovozlar o‘chirildi',musicOn:'Musiqa yoqildi',musicOff:'Musiqa o‘chirildi',saved:'Profil saqlandi',copied:'Havola nusxalandi',exitDemo:'Chiqish — demo',table:'Stol'},
+kk:{settings:'Баптаулар',sounds:'Дыбыстар',music:'Музыка',invite:'Достарды шақыру',profileSettings:'Профиль баптаулары',language:'Тіл',logout:'Шығу',profile:'Профиль',mainPhoto:'Негізгі фото',addPhoto:'+ Фото',name:'Аты',yourName:'Атыңыз',birth:'Туған күні',gender:'Жынысы',male:'Ер',female:'Әйел',saveProfile:'Профильді сақтау',spin:'Айналдыру',waiting:'Келесі жүрісті күтеміз',write:'Хабарлама жазу',gifts:'Сыйлықтар',send:'Жіберу',chooseGift:'Сыйлық таңдаңыз',topup:'Шотты толтыру',popular:'Танымал',friends:'суйуу',fun:'Әзілдер',style:'vibe',food:'aitysh duinosu',vip:'насаат',epic:'молодеж kg',tiktok:'TikTok',chooseTheme:'Фон тақырыбын таңдаңыз',customBg:'Өз фоныңыз',romantic:'Романтикалық орындар',soundOn:'Дыбыстар қосылды',soundOff:'Дыбыстар өшірілді',musicOn:'Музыка қосылды',musicOff:'Музыка өшірілді',saved:'Профиль сақталды',copied:'Сілтеме көшірілді',exitDemo:'Шығу — демо',table:'Үстел'},
+tr:{settings:'Ayarlar',sounds:'Sesler',music:'Müzik',invite:'Arkadaşlarını davet et',profileSettings:'Profil ayarları',language:'Dil',logout:'Çıkış',profile:'Profil',mainPhoto:'Ana fotoğraf',addPhoto:'+ Fotoğraf',name:'Ad',yourName:'Adınız',birth:'Doğum tarihi',gender:'Cinsiyet',male:'Erkek',female:'Kadın',saveProfile:'Profili kaydet',spin:'Çevir',waiting:'Sıradaki hamle bekleniyor',write:'Mesaj yaz',gifts:'Hediyeler',send:'Gönder',chooseGift:'Hediye seçin',topup:'Bakiye yükle',popular:'Popüler',friends:'суйуу',fun:'Eğlence',style:'vibe',food:'aitysh duinosu',vip:'насаат',epic:'молодеж kg',tiktok:'TikTok',chooseTheme:'Arka plan temasını seç',customBg:'Kendi arka planın',romantic:'Romantik yerler',soundOn:'Sesler açık',soundOff:'Sesler kapalı',musicOn:'Müzik açık',musicOff:'Müzik kapalı',saved:'Profil kaydedildi',copied:'Bağlantı kopyalandı',exitDemo:'Çıkış — demo',table:'Masa'},
+en:{settings:'Settings',sounds:'Sounds',music:'Music',invite:'Invite friends',profileSettings:'Profile settings',language:'Language',logout:'Log out',profile:'Profile',mainPhoto:'Main photo',addPhoto:'+ Photo',name:'Name',yourName:'Your name',birth:'Date of birth',gender:'Gender',male:'Male',female:'Female',saveProfile:'Save profile',spin:'Spin',waiting:'Waiting for the next turn',write:'Write a message',gifts:'Gifts',send:'Send',chooseGift:'Choose a gift',topup:'Top up balance',popular:'Popular',friends:'суйуу',fun:'Fun',style:'vibe',food:'aitysh duinosu',vip:'насаат',epic:'молодеж kg',tiktok:'TikTok',chooseTheme:'Choose background theme',customBg:'Custom background',romantic:'Romantic places',soundOn:'Sounds on',soundOff:'Sounds off',musicOn:'Music on',musicOff:'Music off',saved:'Profile saved',copied:'Link copied',exitDemo:'Log out — demo',table:'Table'}
+};
+let appLang=localStorage.getItem('kissmeet.lang')||'ru';
+const L=()=>APP_I18N[appLang]||APP_I18N.ru;
+const setTxt=(sel,val)=>{const el=document.querySelector(sel);if(el&&val!=null)el.textContent=val};
+const applyAppLanguage=()=>{const d=L();document.documentElement.lang=appLang;
+setTxt('.settingsMenuView .settingsHead b',d.settings);
+const rows=[...document.querySelectorAll('#settingsMenuView .settingsRow')];if(rows[0])rows[0].querySelector('span:nth-child(2)').textContent=d.sounds;if(rows[1])rows[1].querySelector('span:nth-child(2)').textContent=d.music;
+setTxt('#inviteFriendsBtn span:nth-child(2)',d.invite);setTxt('#profileSettingsBtn span:nth-child(2)',d.profileSettings);setTxt('#settingsLanguageLabel',d.language);setTxt('#logoutBtn span:nth-child(2)',d.logout);
+setTxt('#settingsProfileView .settingsHead b',d.profile);setTxt('#profilePhotoMain span',d.mainPhoto);document.querySelectorAll('.profilePhotoExtra span').forEach(x=>x.textContent=d.addPhoto);
+const labels=[...document.querySelectorAll('.profileFields label')];if(labels[0]){labels[0].childNodes[0].nodeValue=d.name;labels[0].querySelector('input').placeholder=d.yourName}if(labels[1])labels[1].childNodes[0].nodeValue=d.birth;
+setTxt('.profileGender>span',d.gender);const gb=document.querySelectorAll('[data-gender]');if(gb[0])gb[0].textContent=d.male;if(gb[1])gb[1].textContent=d.female;setTxt('#profileSettingsSave',d.saveProfile);
+setTxt('#languageViewTitle',d.language);setTxt('#spin',d.spin);if($('#turnText')&&['Ждём следующего хода','Кийинки жүрүштү күтөбүз','Keyingi yurishni kutamiz','Келесі жүрісті күтеміз','Sıradaki hamle bekleniyor','Waiting for the next turn'].includes($('#turnText').textContent.trim()))$('#turnText').textContent=d.waiting;
+if($('#msg'))$('#msg').placeholder=d.write;setTxt('.giftToolbar b',d.gifts);setTxt('#giftSelected','Коснись подарка — отправится сразу');setTxt('#giftTopup',`♥ ${d.topup}`);
+const tabs=document.querySelectorAll('#giftTabs button');const tv=[`🔥 ${d.popular}`,`🤝 ${d.friends}`,`😂 ${d.fun}`,`😎 ${d.style}`,`🎵 ${d.tiktok}`,`👑 ${d.vip}`,`✨ ${d.epic}`,`🍔 ${d.food}`];tabs.forEach((b,i)=>{if(tv[i])b.textContent=tv[i]});
+setTxt('#themeTitle',d.chooseTheme);const ctb=document.querySelector('#customThemeBtn b');if(ctb)ctb.textContent=d.customBg;setTxt('.placesTitle',d.romantic);const tb=document.querySelector('.neonTableText b');if(tb)tb.textContent=d.table;
+document.querySelectorAll('[data-app-lang]').forEach(b=>b.classList.toggle('active',b.dataset.appLang===appLang));
+};
+$('#languageSettingsBtn').onclick=()=>{$('#settingsMenuView').classList.add('hidden');$('#settingsProfileView').classList.add('hidden');$('#settingsLanguageView').classList.remove('hidden');applyAppLanguage()};
+$('#settingsLanguageBack').onclick=()=>{$('#settingsLanguageView').classList.add('hidden');$('#settingsMenuView').classList.remove('hidden')};
+$('#settingsLanguageClose').onclick=closeSettings;
+document.querySelectorAll('[data-app-lang]').forEach(btn=>btn.onclick=()=>{appLang=btn.dataset.appLang;localStorage.setItem('kissmeet.lang',appLang);applyAppLanguage();setTimeout(()=>{$('#settingsLanguageView').classList.add('hidden');$('#settingsMenuView').classList.remove('hidden')},140)});
+applyAppLanguage();
+
+// Trophy ranking modal — four categories, without the smiley rating tab.
+const RANKING_DATA={
+ kiss:{title:'Самые зацелованные',icon:'💋',values:[777724,30988,29091,28827,27256,26314,25848,24970,24789,24357],names:['Nik','Ricky','Ceccelia','Fiana','Koshechka','Abid','Richard','Zloya','Stiyl','Namid']},
+ music:{title:'Лучшие диджеи',icon:'🎵',values:[18342,14221,12688,10526,9552,9411,8618,7614,7275,6870],names:['Fiana','Malka','Шальной','Sylvia','Zlata','Ирина','Ahmet','Sûltan','MUSIC','Maxsumius']},
+ heart:{title:'Самые дорогие',icon:'♥',values:[1673,1425,1387,1376,1321,1241,1187,1165,1157,1098],names:['Lydia','Bonnie','Amcel','Indrit','Slavisha','Andrea','ALKIMENT','Николаевич','Ekrem','Georgi']},
+ influence:{title:'Самые влиятельные',icon:'💕',values:[81854,55836,44249,41814,39731,37202,36157,32529,31253,31219],names:['BAŞKAN','Orhan','Akhmatova','Könül','Elnarə','Malka','Ara','ALI','Mina','Elifsu']}
+};
+let rankingType='kiss',rankingPeriod='month';
+const rankPeriodText={all:'за все время',month:'за месяц',week:'за неделю',day:'за день'};
+const renderRanking=()=>{const d=RANKING_DATA[rankingType];$('#rankingTitle').textContent=d.title;$('#rankingPeriodLabel').textContent=rankPeriodText[rankingPeriod];const factor={all:1.75,month:1,week:.38,day:.08}[rankingPeriod]||1;const medals=['🥇','🥈','🥉'];$('#rankingList').innerHTML=d.names.map((name,i)=>{const n=Math.max(1,Math.round(d.values[i]*factor));return `<button class="rankingRow rank-${i+1}" type="button" data-rank-user="${i}"><div class="rankingPosition">${i<3?medals[i]:i+1}</div><div class="rankingAvatar"><img src="${photoFor('rank'+i,i+4)}" alt=""><i></i></div><div class="rankingName"><b>${name}</b><small>№ ${i+1} в рейтинге</small></div><div class="rankingScore"><span>${d.icon}</span><b>${n.toLocaleString('ru-RU')}</b></div></button>`}).join('');const myName=localStorage.getItem('kissmeet.profile.name')||'Player 1';const myPhoto=localStorage.getItem('kissmeet.profile.main')||photoFor(playerId,1);const myScore=rankingType==='heart'?1:rankingType==='influence'?0:rankingType==='music'?0:27;const myPlace=rankingType==='kiss'?'15 372':'1 061 201';$('#rankingMe').innerHTML=`<div class="rankingPosition me">★</div><div class="rankingAvatar"><img src="${myPhoto}" alt=""><i></i></div><div class="rankingName"><b>${myName}</b><small>Ваше место: ${myPlace}</small></div><div class="rankingScore"><span>${d.icon}</span><b>${myScore.toLocaleString('ru-RU')}</b></div>`;document.querySelectorAll('[data-rank-type]').forEach(b=>b.classList.toggle('active',b.dataset.rankType===rankingType));document.querySelectorAll('[data-rank-period]').forEach(b=>b.classList.toggle('active',b.dataset.rankPeriod===rankingPeriod));document.querySelectorAll('[data-rank-user]').forEach(row=>row.onclick=()=>{const i=+row.dataset.rankUser;toast(`${d.names[i]} · ${row.querySelector('.rankingScore b').textContent}`)});};
+const openRanking=()=>{$('#rankingOverlay').classList.remove('hidden');renderRanking()};const closeRanking=()=>{$('#rankingOverlay').classList.add('hidden');$('#rankingPeriodMenu').classList.add('hidden')};
+document.querySelector('.trophyPhotoBtn').onclick=openRanking;$('#rankingClose').onclick=closeRanking;$('#rankingBackdrop').onclick=closeRanking;document.querySelectorAll('[data-rank-type]').forEach(b=>b.onclick=()=>{rankingType=b.dataset.rankType;renderRanking()});$('#rankingPeriodBtn').onclick=()=>$('#rankingPeriodMenu').classList.toggle('hidden');document.querySelectorAll('[data-rank-period]').forEach(b=>b.onclick=()=>{rankingPeriod=b.dataset.rankPeriod;$('#rankingPeriodMenu').classList.add('hidden');renderRanking()});
+
+// Table switcher: recent tables, create table and random table.
+(function(){
+  const btn=document.querySelector('#tableButton');
+  if(!btn||document.querySelector('#tableSwitcher'))return;
+  const q=new URLSearchParams(location.search);
+  const current=(q.get('room')||'main').replace(/[^A-Za-z0-9_-]/g,'').slice(0,64)||'main';
+  function numberOf(id){
+    if(id==='main')return '165';
+    const m=String(id).match(/(\d{1,4})$/);if(m)return m[1];
+    let h=0;for(const c of String(id))h=(h*31+c.charCodeAt(0))>>>0;
+    return String(100+h%900);
+  }
+  const currentNumber=numberOf(current);
+  const numberNode=btn.querySelector('.neonTableText strong');
+  if(numberNode)numberNode.textContent=currentNumber;
+  btn.title='Стол '+currentNumber;btn.setAttribute('aria-label','Стол '+currentNumber);
+  const modal=document.createElement('div');
+  modal.id='tableSwitcher';modal.className='tableSwitcher hidden';
+  modal.innerHTML='<section class="tableSwitcherCard" role="dialog" aria-modal="true"><div class="tableSwitcherHead">Сменить стол</div><button class="tableSwitcherClose" type="button">×</button><button class="tableCreateBtn" type="button">Создать стол</button><button class="tableRandomBtn" type="button">Случайный стол</button><div class="tableSwitcherSub tableFriendsTitle">Друзья и приятели</div><div class="tableFriendsList"></div><div class="tableSwitcherSub">Твои последние столы</div><div class="tableRecentList"></div></section>';
+  document.body.appendChild(modal);
+  function recent(){try{return JSON.parse(localStorage.getItem('kissmeet.recentTables')||'[]').filter(x=>x&&x.room)}catch(e){return[]}}
+  function remember(id){
+    const rows=recent().filter(x=>x.room!==id),cfg=readTableSettings(id);
+    const owner=cfg&&cfg.owner===playerId;
+    rows.unshift({room:id,number:numberOf(id),maxPlayers:cfg?.maxPlayers||null,owner:!!owner,ownerName:owner?(localStorage.getItem('kissmeet.profile.name')||'Player 1'):null,ownerPhoto:owner?(localStorage.getItem('kissmeet.profile.main')||DEMO[7]?.photo||DEMO[0]?.photo||''):null});
+    localStorage.setItem('kissmeet.recentTables',JSON.stringify(rows.slice(0,4)));
+  }
+  function go(id){remember(id);const u=new URL(location.href);if(id==='main')u.searchParams.delete('room');else u.searchParams.set('room',id);location.href=u.toString()}
+  function renderFriends(){
+    const box=modal.querySelector('.tableFriendsList');
+    const demoFriends=(typeof DEMO!=='undefined'&&Array.isArray(DEMO)?DEMO.slice(0,3):[]);
+    if(!demoFriends.length){box.innerHTML='<div class="tableSwitcherEmpty">Друзья появятся здесь</div>';return}
+    box.innerHTML=demoFriends.map((f,i)=>'<button class="tableFriendItem" type="button" data-friend-room="friend-'+i+'"><span class="tableFriendPhoto" style="background-image:url('+String(f.photo||'')+')"></span><span class="tableFriendMain"><b>'+(f.name||('Друг '+(i+1)))+'</b><small>за столом #'+(30418+i*1379)+'</small></span><span class="tableFriendMeta">◉ '+(i+2)+'　◌ '+(i+1)+'</span></button>').join('');
+    box.querySelectorAll('[data-friend-room]').forEach(x=>x.addEventListener('click',()=>go(x.dataset.friendRoom)));
+  }
+  function renderRecent(){
+    const box=modal.querySelector('.tableRecentList');const rows=recent();
+    if(!rows.length){box.innerHTML='<div class="tableSwitcherEmpty">Последних столов пока нет</div>';return}
+    box.innerHTML=rows.map((r,i)=>{const isCreated=!!r.maxPlayers;const icon=r.owner&&r.ownerPhoto?'<span class="tableRecentIcon ownerPhoto" style="background-image:url('+String(r.ownerPhoto).replace(/[\"<>]/g,'')+')"></span>':(isCreated?'':'<span class="tableRecentIcon">'+(i%2?'♜':'♟')+'</span>');const sub=r.owner?'<small class="recentOwnerLabel">Хозяин · '+(r.maxPlayers||6)+' мест</small>':(isCreated?'':'');const cls='tableRecentItem '+(r.room===current?'active ':'')+(isCreated&&!r.owner?'noOwner ':'');return '<button class="'+cls.trim()+'" type="button" data-room="'+r.room+'">'+icon+'<span class="tableRecentMain"><b>#'+r.number+'</b>'+sub+'</span>'+(r.owner?'<span class="tableRecentMeta">◉ 1</span>':'')+'</button>'}).join('');
+    box.querySelectorAll('[data-room]').forEach(x=>x.addEventListener('click',()=>go(x.dataset.room)));
+  }
+  function open(){remember(current);renderFriends();renderRecent();modal.classList.remove('hidden');document.body.classList.add('modalOpen')}
+  function close(){modal.classList.add('hidden');document.body.classList.remove('modalOpen')}
+  const HOST_COST=20;
+  const createModal=document.createElement('div');
+  createModal.id='createTableModal';createModal.className='createTableModal hidden';
+  createModal.innerHTML='<section class="createTableCard" role="dialog" aria-modal="true"><div class="createTableHead"><button class="createTableBack" type="button">‹</button><b>Создать стол</b><button class="createTableClose" type="button">×</button></div><label class="createTableField"><span>Номер стола</span><input id="newTableNumber" inputmode="numeric" pattern="[0-9]*" maxlength="5" placeholder="Например 165"></label><div class="createTableField"><span>Количество игроков</span><div class="playerCountPicker"><button type="button" class="playerCountMinus">−</button><strong id="newTablePlayers">6</strong><button type="button" class="playerCountPlus">+</button></div><small>От 2 до 11 игроков</small></div><button class="tableOwnerOption" type="button"><span class="ownerCrown">♛</span><span><b>Хозяин стола</b><small>Управление столом и место хозяина</small></span><strong>'+HOST_COST+' ♥</strong><i></i></button><div class="createTableBalance">Баланс: <b id="createTableHeartBalance">0</b> ♥</div><button class="createTableSubmit" type="button">Создать стол</button></section>';
+  document.body.appendChild(createModal);
+  let desiredPlayers=6,ownerEnabled=false;
+  const updateCreateUi=()=>{createModal.querySelector('#newTablePlayers').textContent=String(desiredPlayers);createModal.querySelector('.tableOwnerOption').classList.toggle('active',ownerEnabled);createModal.querySelector('#createTableHeartBalance').textContent=String(getHeartBalance())};
+  function showCreateTable(){modal.classList.add('hidden');desiredPlayers=6;ownerEnabled=false;const input=createModal.querySelector('#newTableNumber');input.value=String(100+Math.floor(Math.random()*99900));updateCreateUi();createModal.classList.remove('hidden');setTimeout(()=>input.focus(),80)}
+  function hideCreateTable(backToTables=true){createModal.classList.add('hidden');if(backToTables){renderFriends();renderRecent();modal.classList.remove('hidden')}else document.body.classList.remove('modalOpen')}
+  function createTable(){showCreateTable()}
+  function submitCreateTable(){const input=createModal.querySelector('#newTableNumber');const n=String(input.value||'').replace(/\D/g,'').slice(0,5);if(!n){toast('Выбери номер стола');input.focus();return}if(ownerEnabled&&getHeartBalance()<HOST_COST){toast('Недостаточно сердечек');return}if(ownerEnabled)setHeartBalance(getHeartBalance()-HOST_COST);const id='table-'+n;localStorage.setItem('kissmeet.table.settings.'+id,JSON.stringify({number:n,maxPlayers:desiredPlayers,owner:ownerEnabled?playerId:null,ownerPaid:ownerEnabled?HOST_COST:0}));go(id)}
+  function randomTable(){let n=100+Math.floor(Math.random()*900);if(String(n)===currentNumber)n=n===999?100:n+1;go('table-'+n)}
+  btn.addEventListener('click',open);
+  modal.addEventListener('click',e=>{if(e.target===modal)close()});
+  modal.querySelector('.tableSwitcherClose').addEventListener('click',close);
+  modal.querySelector('.tableCreateBtn').addEventListener('click',createTable);
+  modal.querySelector('.tableRandomBtn').addEventListener('click',randomTable);
+  createModal.querySelector('.createTableBack').addEventListener('click',()=>hideCreateTable(true));
+  createModal.querySelector('.createTableClose').addEventListener('click',()=>hideCreateTable(false));
+  createModal.querySelector('.playerCountMinus').addEventListener('click',()=>{desiredPlayers=Math.max(2,desiredPlayers-1);updateCreateUi()});
+  createModal.querySelector('.playerCountPlus').addEventListener('click',()=>{desiredPlayers=Math.min(11,desiredPlayers+1);updateCreateUi()});
+  createModal.querySelector('.tableOwnerOption').addEventListener('click',()=>{ownerEnabled=!ownerEnabled;updateCreateUi()});
+  createModal.querySelector('.createTableSubmit').addEventListener('click',submitCreateTable);
+  document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!createModal.classList.contains('hidden'))hideCreateTable(true);else if(!modal.classList.contains('hidden'))close()});
+  remember(current);
+})();
