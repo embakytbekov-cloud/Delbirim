@@ -1293,3 +1293,50 @@ body.heartDuelActive .centerBottle{visibility:hidden!important;opacity:0!importa
 .person.createdSeat{pointer-events:auto}.person.createdSeat.emptySeat{pointer-events:none;opacity:.58}.emptySeatPhoto{background:rgba(255,255,255,.12)!important;border:2px dashed rgba(255,255,255,.48)!important;box-shadow:none!important;display:grid!important;place-items:center!important}.emptySeatPhoto>span{font-size:26px!important;color:rgba(255,255,255,.72)!important;text-shadow:none}.emptySeatName{color:rgba(255,255,255,.72)!important;font-weight:700}.createdOwner .photo{outline:3px solid #ffd36a;box-shadow:0 0 0 3px rgba(255,211,106,.18),0 5px 18px rgba(0,0,0,.28)}.ownerBadge{position:absolute;left:50%;bottom:-9px;transform:translateX(-50%);z-index:5;background:linear-gradient(180deg,#f6d27f,#b8792d);color:#4d2b10;border:1px solid #fff3c6;border-radius:10px;padding:2px 7px;font-size:9px;font-weight:900;font-style:normal;text-shadow:none;white-space:nowrap}.createdTableWelcome{margin:14px auto;padding:12px 14px;width:min(92%,420px);border-radius:16px;background:#fff7e7;color:#79512f;text-align:center;font-weight:800;font-size:14px}.createdTableStat{background:rgba(255,255,255,.88)!important}.tableRecentIcon.ownerPhoto{background-position:center!important;background-size:cover!important;background-repeat:no-repeat!important}.recentOwnerLabel{color:#9c5b27!important;font-weight:900}.tableRecentMain b{font-size:20px}.tableRecentMeta{min-width:30px;text-align:right}
 
 .tableRecentItem.noOwner{grid-template-columns:1fr;padding:12px 10px}.tableRecentItem.noOwner .tableRecentMain b{font-size:23px}.tableRecentItem.noOwner .tableRecentMain:after{content:'';display:block}.createdTableStat strong{font-size:13px}.createdTableWelcome{box-shadow:0 5px 15px rgba(0,0,0,.12)}
+
+/* 2026-09-21 Приколы №1–15: show the user's uploaded photos clearly in gift cards */
+.giftTile[data-gift^="new_20260921_fun_"]{
+  height:132px!important;
+  padding:5px 5px 7px!important;
+  gap:3px!important;
+  overflow:hidden!important;
+}
+.giftTile[data-gift^="new_20260921_fun_"] .giftThumbWrap{
+  width:calc(100% - 6px)!important;
+  height:78px!important;
+  min-width:0!important;
+  max-width:none!important;
+  margin:0 3px!important;
+  padding:0!important;
+  overflow:hidden!important;
+  border-radius:11px!important;
+  display:block!important;
+  transform:none!important;
+}
+.giftTile[data-gift^="new_20260921_fun_"] .giftThumb{
+  width:100%!important;
+  height:100%!important;
+  min-width:100%!important;
+  min-height:100%!important;
+  max-width:none!important;
+  max-height:none!important;
+  display:block!important;
+  object-fit:cover!important;
+  object-position:center center!important;
+  border-radius:0!important;
+  margin:0!important;
+  padding:0!important;
+}
+.giftTile[data-gift^="new_20260921_fun_"] b{
+  max-width:95%!important;
+  font-size:10px!important;
+  line-height:1.08!important;
+}
+.giftTile[data-gift^="new_20260921_fun_"] .giftVideoMark{
+  top:7px!important;
+  left:8px!important;
+}
+@media(max-width:520px){
+  .giftTile[data-gift^="new_20260921_fun_"]{height:126px!important;}
+  .giftTile[data-gift^="new_20260921_fun_"] .giftThumbWrap{height:72px!important;}
+}
