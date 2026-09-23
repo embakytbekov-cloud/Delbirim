@@ -1365,3 +1365,10 @@ body.heartDuelActive .centerBottle{visibility:hidden!important;opacity:0!importa
 @media(max-width:520px){.rouletteItemWrap{width:96px;height:96px}.rouletteItem{width:92px;height:92px}.rouletteGlyph{font-size:61px}.roulettePointer{right:-14px;top:36px;font-size:23px}.rouletteHub{left:41px;top:40px}.itemChooserBtn{font-size:11px;padding:5px 9px}.itemChooser{top:40px;width:178px}}
 
 .settingsRouletteView.hidden{display:none}.rouletteOptions{display:flex;flex-direction:column;padding:4px 0 8px}.rouletteOptions button{height:58px;border:0;border-bottom:1px solid #ececec;background:transparent;display:grid;grid-template-columns:48px 1fr 30px;align-items:center;text-align:left;color:#202020;padding:0 4px;font-size:17px;cursor:pointer}.rouletteOptions button:last-child{border-bottom:0}.rouletteOptions button span{font-size:28px;text-align:center}.rouletteOptions button b{font-size:17px}.rouletteOptions button i{font-style:normal;color:#8dcc35;font-size:22px;opacity:0}.rouletteOptions button.active{background:#f7faf1}.rouletteOptions button.active i{opacity:1}.rouletteOptions button:active{background:#f1f1f1}
+/* Selected roulette object restored to the table */
+.centerBottle .rouletteItemWrap{display:grid!important;visibility:visible!important;opacity:1!important;z-index:3}
+.centerBottle .rouletteItem{display:grid!important;visibility:visible!important;opacity:1!important}
+.centerBottle .rouletteGlyph{display:block!important;visibility:visible!important;opacity:1!important}
+.centerBottle .spin{display:block!important;visibility:visible!important;pointer-events:auto!important;z-index:4}
+.settingsClassic .settingsRowButton{pointer-events:auto!important;position:relative;z-index:2}
+.settingsRouletteView,.settingsLanguageView{position:relative;z-index:3}
