@@ -4,7 +4,7 @@ root.innerHTML=`<main class="game"><video id="themeVideoBg" class="themeVideoBg 
 const DEMO=[['Айдана, 27',47,'🌻',68],['Бекзат, 30',12,'🧁',40],['Алина, 25',44,'📺',37],['Тимур, 31',11,'🌼',64],['Айгерим, 28',45,'🧸',44,'https://www.youtube.com/watch?v=jNQXAC9IVRw'],['Нурбек, 29',13,'🥃',19],['Сабина, 26',49,'☕',7],['Арсен, 32',15,'💎',5],['Малика, 24',48,'💖',23],['Данияр, 33',14,'👑',11],['София, 29',43,'🌹',31]].map(([name,img,gift,badge,video])=>({name,photo:`https://i.pravatar.cc/300?img=${img}`,gift,badge,video}));
 const POS=[[14,14],[36,7],[59,7],[84,11],[11,40],[89,40],[11,64],[89,64],[24,89],[50,93],[76,89]];
 const FALLBACK_GIFTS=[
-  {"id":"rose_love_20260923","name":"Роза…","cost":499,"category":"friendly","asset":"effect://rose-love-20260923","emoji":"🌹","epic":true,"effect":"romance","postEffect":"romance","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/4fd8d38b-948b-4b63-bd43-ffc1a6614beb.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/e3b28f43-8fe3-4f0a-ad35-2c5f0bc4575c.mp4","transparentVideo":true},
+  {"id":"rose_love_20260923","name":"Роза…","cost":499,"category":"tiktok","asset":"effect://rose-love-20260923","emoji":"🌹","epic":true,"effect":"romance","postEffect":"romance","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/4fd8d38b-948b-4b63-bd43-ffc1a6614beb.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/e3b28f43-8fe3-4f0a-ad35-2c5f0bc4575c.mp4","transparentVideo":true},
   {"id":"new_20260922_aitysh_chat2_01","name":"санжыра айтса балдарга","cost":499,"category":"food","asset":"effect://new-20260922-aitysh-chat2-01","emoji":"🌈✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/39c6005e-ffd5-406a-a8c4-97c48af2701e.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/63aef1ce-2f13-4b37-add0-a67eb056cbd5.mp4"},
   {"id":"new_20260922_aitysh_chat2_02","name":"төрүнө малын жайлаган","cost":499,"category":"food","asset":"effect://new-20260922-aitysh-chat2-02","emoji":"🌈✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/a3b201a0-4d18-499d-97f3-f04adac3d452.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/053fbf24-52ae-4f6a-938c-df1273d425fd.mp4"},
   {"id":"new_20260922_aitysh_chat2_03","name":"Facebook","cost":499,"category":"food","asset":"effect://new-20260922-aitysh-chat2-03","emoji":"🌈✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/0128821d-b34d-4976-804f-1019b7f8948e.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/80827c2c-257d-4f2c-a3d3-0e5dcbdf0822.mp4"},
@@ -1093,12 +1093,21 @@ function showSeniSuyomGift(gift,from,to,targetId,targetEl){
     v.addEventListener('error',()=>setTimeout(end,1200),{once:true});
   }
 }
+function showRoseVipGift(gift,from,to,targetId,targetEl){
+  const target=targetEl||giftElForPlayer(targetId),p=giftPoint(target,giftFallbackTarget());
+  const stage=document.createElement('div');stage.className='roseVipOverlay';stage.style.setProperty('--rx',Math.round(p.x)+'px');stage.style.setProperty('--ry',Math.round(p.y)+'px');
+  stage.innerHTML=`<div class="roseVipAura"></div><div class="roseVipPetals">${Array.from({length:24},(_,i)=>`<i style="--a:${i*15}deg;--d:${(i%8)*.06}s">✦</i>`).join('')}</div><video class="roseVipVideo" src="${esc(gift.videoUrl)}" autoplay muted playsinline></video><div class="roseVipLabel"><b>VIP · ${esc(gift.name||'Роза')}</b><small>${esc(from||'Игрок')} → ${esc(to||'Игрок')}</small></div>`;
+  document.body.appendChild(stage);giftImpact({effect:'romance'},target);
+  const v=stage.querySelector('video');let done=false;const finish=()=>{if(done)return;done=true;stage.classList.add('leaving');setTimeout(()=>stage.remove(),650)};
+  if(v){v.currentTime=0;v.play().catch(()=>{});v.addEventListener('ended',finish,{once:true});v.addEventListener('error',()=>setTimeout(finish,2200),{once:true})}setTimeout(finish,10500);
+}
 function playGiftEvent(event){
   const gift=giftCatalog().find(g=>g.id===event.gift)||{id:event.gift,name:event.gift,emoji:event.emoji||GIFT_EMOJI[event.gift]||'🎁',cost:event.cost||0,epic:Boolean(event.epic),effect:'pop'};
   if(gift.id==='lion'){showPremiumLionGift(event.fromName||nameOf(event.from),event.toName||nameOf(event.to));return;}
   if(gift.id==='kyrgyz_warrior'){showKyrgyzWarriorGift(event.fromName||nameOf(event.from),event.toName||nameOf(event.to));return;}
   if(gift.id==='aurakg'){showAurakgGift(event.fromName||nameOf(event.from),event.toName||nameOf(event.to));return;}
   if(gift.id==='bauri_vip'){if(String(event.from)===String(playerId)&&Date.now()-(window.__bauriLocalSentAt||0)<20000)return;showBauriVipGift(event.fromName||nameOf(event.from),event.toName||nameOf(event.to),event.to,giftElForPlayer(event.to));return;}
+  if(gift.id==='rose_love_20260923'){showRoseVipGift(gift,event.fromName||nameOf(event.from),event.toName||nameOf(event.to),event.to,giftElForPlayer(event.to));return;}
   if(gift.id!=='kolunan_emne_kelet'){kolunanStickerPlayers.delete(String(event.to));giftElForPlayer(event.to)?.querySelector('.kolunanSticker')?.remove();}
   if(gift.id==='kolunan_emne_kelet'){
     kolunanStickerPlayers.delete(String(event.to));giftElForPlayer(event.to)?.querySelector('.kolunanSticker')?.remove();
