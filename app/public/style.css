@@ -1372,3 +1372,10 @@ body.heartDuelActive .centerBottle{visibility:hidden!important;opacity:0!importa
 .centerBottle .spin{display:block!important;visibility:visible!important;pointer-events:auto!important;z-index:4}
 .settingsClassic .settingsRowButton{pointer-events:auto!important;position:relative;z-index:2}
 .settingsRouletteView,.settingsLanguageView{position:relative;z-index:3}
+
+/* Transparent premium rose gift: keep the game and player cards visible behind the alpha video. */
+.giftVideoStage[data-gift="rose_love_20260923"]{background:transparent!important;pointer-events:none}
+.giftVideoStage[data-gift="rose_love_20260923"] .giftVideoGlow,.giftVideoStage[data-gift="rose_love_20260923"] .giftVideoHearts,.giftVideoStage[data-gift="rose_love_20260923"] .giftVideoShine,.giftVideoStage[data-gift="rose_love_20260923"] .giftVideoBadge{display:none!important}
+.giftVideoStage[data-gift="rose_love_20260923"] .giftVideoCard{background:transparent!important;box-shadow:none!important;border:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;display:grid!important;place-items:center!important}
+.giftVideoStage[data-gift="rose_love_20260923"] .giftLoveVideo{width:100%!important;height:100%!important;object-fit:contain!important;background:transparent!important;mix-blend-mode:normal!important}
+.giftVideoStage[data-gift="rose_love_20260923"] .giftVideoTopControls{pointer-events:auto}
