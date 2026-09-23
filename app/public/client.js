@@ -1096,11 +1096,12 @@ function showSeniSuyomGift(gift,from,to,targetId,targetEl){
 function showRoseVipGift(gift,from,to,targetId,targetEl){
   const target=targetEl||giftElForPlayer(targetId),p=giftPoint(target,giftFallbackTarget());
   const stage=document.createElement('div');stage.className='roseVipOverlay';stage.style.setProperty('--rx',Math.round(p.x)+'px');stage.style.setProperty('--ry',Math.round(p.y)+'px');
-  stage.innerHTML=`<div class="roseVipAura"></div><div class="roseVipPetals">${Array.from({length:24},(_,i)=>`<i style="--a:${i*15}deg;--d:${(i%8)*.06}s">✦</i>`).join('')}</div><video class="roseVipVideo" src="${esc(gift.videoUrl)}" autoplay muted playsinline></video><div class="roseVipLabel"><b>VIP · ${esc(gift.name||'Роза')}</b><small>${esc(from||'Игрок')} → ${esc(to||'Игрок')}</small></div>`;
+  stage.innerHTML=`<div class="roseVipFlash"></div><div class="roseVipHalo h1"></div><div class="roseVipHalo h2"></div><div class="roseVipPetals">${Array.from({length:42},(_,i)=>`<i style="--a:${i*8.57}deg;--d:${(i%12)*.045}s;--r:${120+(i%7)*28}px">${i%5===0?'♥':'✦'}</i>`).join('')}</div><div class="roseVipSparkles">${Array.from({length:26},(_,i)=>`<i style="--x:${(i*37)%100}vw;--y:${(i*61)%100}vh;--d:${(i%9)*.07}s">✧</i>`).join('')}</div><video class="roseVipVideo" src="${esc(gift.videoUrl)}" autoplay muted playsinline></video><div class="roseVipCrown">VIP</div><div class="roseVipLabel"><b>${esc(gift.name||'Роза')}</b><small>${esc(from||'Игрок')} → ${esc(to||'Игрок')}</small></div>`;
   document.body.appendChild(stage);giftImpact({effect:'romance'},target);
-  const v=stage.querySelector('video');let done=false;const finish=()=>{if(done)return;done=true;stage.classList.add('leaving');setTimeout(()=>stage.remove(),650)};
+  const v=stage.querySelector('video');let done=false;const finish=()=>{if(done)return;done=true;stage.classList.add('leaving');setTimeout(()=>stage.remove(),720)};
   if(v){v.currentTime=0;v.play().catch(()=>{});v.addEventListener('ended',finish,{once:true});v.addEventListener('error',()=>setTimeout(finish,2200),{once:true})}setTimeout(finish,10500);
 }
+
 function playGiftEvent(event){
   const gift=giftCatalog().find(g=>g.id===event.gift)||{id:event.gift,name:event.gift,emoji:event.emoji||GIFT_EMOJI[event.gift]||'🎁',cost:event.cost||0,epic:Boolean(event.epic),effect:'pop'};
   if(gift.id==='lion'){showPremiumLionGift(event.fromName||nameOf(event.from),event.toName||nameOf(event.to));return;}
