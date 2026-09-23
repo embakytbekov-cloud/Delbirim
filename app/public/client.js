@@ -1109,17 +1109,6 @@ function showRoseVipGift(gift,from,to,targetId,targetEl){
 function showTeddyVipGift(gift,from,to,targetId,targetEl){
   const target=targetEl||giftElForPlayer(targetId);
   const stage=document.createElement('div');stage.className='teddyVipOverlay';
-  stage.innerHTML=`<div class="teddyVipGlow"></div><div class="teddyVipHearts">${Array.from({length:30},(_,i)=>`<i style="--x:${8+(i*31)%84}%;--y:${10+(i*47)%76}%;--d:${(i%10)*.07}s">${i%3?'✦':'♥'}</i>`).join('')}</div><canvas class="teddyVipCanvas"></canvas><video class="teddyVipSource" src="${esc(gift.videoUrl)}" muted playsinline preload="auto" crossorigin="anonymous"></video><div class="teddyVipLabel"><b>VIP · ${esc(gift.name||'Мишка')}</b><small>${esc(from||'Игрок')} → ${esc(to||'Игрок')}</small></div>`;
-  document.body.appendChild(stage);giftImpact({effect:'romance'},target);
-  const v=stage.querySelector('.teddyVipSource'),c=stage.querySelector('.teddyVipCanvas'),ctx=c.getContext('2d',{willReadFrequently:true});let done=false,raf=0;
-  const fit=()=>{const d=Math.min(devicePixelRatio||1,1.35);c.width=Math.max(2,Math.floor(innerWidth*d));c.height=Math.max(2,Math.floor(innerHeight*d));c.style.width=innerWidth+'px';c.style.height=innerHeight+'px'};fit();
-  const frame=()=>{if(done)return;raf=requestAnimationFrame(frame);if(v.readyState<2)return;const W=c.width,H=c.height,vw=v.videoWidth||1080,vh=v.videoHeight||1920;ctx.clearRect(0,0,W,H);const sc=Math.min(W/vw,H/vh)*.98,dw=vw*sc,dh=vh*sc,dx=(W-dw)/2,dy=(H-dh)/2-H*.035;ctx.drawImage(v,dx,dy,dw,dh);let im;try{im=ctx.getImageData(Math.max(0,dx|0),Math.max(0,dy|0),Math.min(W,Math.ceil(dw)),Math.min(H,Math.ceil(dh)))}catch(e){return}const d=im.data;for(let i=0;i<d.length;i+=4){const r=d[i],g=d[i+1],b=d[i+2],mx=Math.max(r,g,b),mn=Math.min(r,g,b),range=mx-mn;/* remove baked checkerboard / near-neutral background while preserving saturated bear/hearts */if(range<24&&mx>55){const lum=(r+g+b)/3;let strength=0;if(lum>205)strength=.98;else if(lum>155)strength=.92;else if(lum>105)strength=.82;else strength=.68;d[i+3]=Math.round(255*(1-strength));}else if(range<34&&mx>145){d[i+3]=Math.round(d[i+3]*.18)}}ctx.putImageData(im,Math.max(0,dx|0),Math.max(0,dy|0))};
-  const finish=()=>{if(done)return;done=true;cancelAnimationFrame(raf);stage.classList.add('leaving');setTimeout(()=>stage.remove(),650)};
-  v.currentTime=0;v.play().then(frame).catch(()=>{});v.addEventListener('ended',finish,{once:true});v.addEventListener('error',()=>setTimeout(finish,1800),{once:true});setTimeout(finish,10500);
-}
-function showTeddyVipGift(gift,from,to,targetId,targetEl){
-  const target=targetEl||giftElForPlayer(targetId);
-  const stage=document.createElement('div');stage.className='teddyVipOverlay';
   stage.innerHTML=`<div class="teddyVipGlow"></div><div class="teddyVipHearts">${Array.from({length:26},(_,i)=>`<i style="--x:${8+(i*31)%84}%;--y:${8+(i*47)%78}%;--d:${(i%9)*.08}s">${i%3===0?'♥':'✦'}</i>`).join('')}</div><canvas class="teddyVipCanvas"></canvas><video class="teddyVipSource" src="${esc(gift.videoUrl)}" muted playsinline preload="auto" crossorigin="anonymous"></video><div class="teddyVipLabel"><b>VIP · teddy</b><small>${esc(from||'Игрок')} → ${esc(to||'Игрок')}</small></div>`;
   document.body.appendChild(stage);giftImpact({effect:'romance'},target);
   const v=stage.querySelector('.teddyVipSource'),c=stage.querySelector('.teddyVipCanvas'),ctx=c.getContext('2d',{willReadFrequently:true});let done=false,raf=0;
@@ -1136,7 +1125,6 @@ function playGiftEvent(event){
   if(gift.id==='aurakg'){showAurakgGift(event.fromName||nameOf(event.from),event.toName||nameOf(event.to));return;}
   if(gift.id==='bauri_vip'){if(String(event.from)===String(playerId)&&Date.now()-(window.__bauriLocalSentAt||0)<20000)return;showBauriVipGift(event.fromName||nameOf(event.from),event.toName||nameOf(event.to),event.to,giftElForPlayer(event.to));return;}
   if(gift.id==='rose_love_20260923'){showRoseVipGift(gift,event.fromName||nameOf(event.from),event.toName||nameOf(event.to),event.to,giftElForPlayer(event.to));return;}
-  if(gift.id==='teddy_vip_20260923'){showTeddyVipGift(gift,event.fromName||nameOf(event.from),event.toName||nameOf(event.to),event.to,giftElForPlayer(event.to));return;}
   if(gift.id==='teddy_vip_20260923'){showTeddyVipGift(gift,event.fromName||nameOf(event.from),event.toName||nameOf(event.to),event.to,giftElForPlayer(event.to));return;}
   if(gift.id!=='kolunan_emne_kelet'){kolunanStickerPlayers.delete(String(event.to));giftElForPlayer(event.to)?.querySelector('.kolunanSticker')?.remove();}
   if(gift.id==='kolunan_emne_kelet'){
