@@ -5,6 +5,7 @@ const DEMO=[['Айдана, 27',47,'🌻',68],['Бекзат, 30',12,'🧁',40],
 const POS=[[14,14],[36,7],[59,7],[84,11],[11,40],[89,40],[11,64],[89,64],[24,89],[50,93],[76,89]];
 const FALLBACK_GIFTS=[
   {"id":"rose_love_20260923","name":"Роза…","cost":499,"category":"tiktok","asset":"effect://rose-love-20260923","emoji":"🌹","epic":true,"effect":"romance","postEffect":"romance","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/4fd8d38b-948b-4b63-bd43-ffc1a6614beb.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/0256005c-1062-4942-a1dc-bd52c524ba91.mp4","transparentVideo":true},
+  {"id":"teddy_vip_20260923","name":"teddy","cost":699,"category":"tiktok","asset":"effect://teddy-vip-20260923","emoji":"🧸","epic":true,"effect":"romance","postEffect":"romance","thumb":"","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/733f8520-d917-429d-beb7-0b4cd7009a98.mp4","transparentVideo":true},
   {"id":"new_20260922_aitysh_chat2_01","name":"санжыра айтса балдарга","cost":499,"category":"food","asset":"effect://new-20260922-aitysh-chat2-01","emoji":"🌈✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/39c6005e-ffd5-406a-a8c4-97c48af2701e.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/63aef1ce-2f13-4b37-add0-a67eb056cbd5.mp4"},
   {"id":"new_20260922_aitysh_chat2_02","name":"төрүнө малын жайлаган","cost":499,"category":"food","asset":"effect://new-20260922-aitysh-chat2-02","emoji":"🌈✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/a3b201a0-4d18-499d-97f3-f04adac3d452.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/053fbf24-52ae-4f6a-938c-df1273d425fd.mp4"},
   {"id":"new_20260922_aitysh_chat2_03","name":"Facebook","cost":499,"category":"food","asset":"effect://new-20260922-aitysh-chat2-03","emoji":"🌈✨","epic":true,"effect":"video3d","postEffect":"color_burst","thumb":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/0128821d-b34d-4976-804f-1019b7f8948e.jpg","videoUrl":"https://d2ol7oe51mr4n9.cloudfront.net/user_2x7mtzkT7B8fwCOANKbOmr0qMWp/80827c2c-257d-4f2c-a3d3-0e5dcbdf0822.mp4"},
@@ -1116,6 +1117,18 @@ function showTeddyVipGift(gift,from,to,targetId,targetEl){
   const finish=()=>{if(done)return;done=true;cancelAnimationFrame(raf);stage.classList.add('leaving');setTimeout(()=>stage.remove(),650)};
   v.currentTime=0;v.play().then(frame).catch(()=>{});v.addEventListener('ended',finish,{once:true});v.addEventListener('error',()=>setTimeout(finish,1800),{once:true});setTimeout(finish,10500);
 }
+function showTeddyVipGift(gift,from,to,targetId,targetEl){
+  const target=targetEl||giftElForPlayer(targetId);
+  const stage=document.createElement('div');stage.className='teddyVipOverlay';
+  stage.innerHTML=`<div class="teddyVipGlow"></div><div class="teddyVipHearts">${Array.from({length:26},(_,i)=>`<i style="--x:${8+(i*31)%84}%;--y:${8+(i*47)%78}%;--d:${(i%9)*.08}s">${i%3===0?'♥':'✦'}</i>`).join('')}</div><canvas class="teddyVipCanvas"></canvas><video class="teddyVipSource" src="${esc(gift.videoUrl)}" muted playsinline preload="auto" crossorigin="anonymous"></video><div class="teddyVipLabel"><b>VIP · teddy</b><small>${esc(from||'Игрок')} → ${esc(to||'Игрок')}</small></div>`;
+  document.body.appendChild(stage);giftImpact({effect:'romance'},target);
+  const v=stage.querySelector('.teddyVipSource'),c=stage.querySelector('.teddyVipCanvas'),ctx=c.getContext('2d',{willReadFrequently:true});let done=false,raf=0;
+  const fit=()=>{const d=Math.min(devicePixelRatio||1,1.35);c.width=Math.max(2,Math.floor(innerWidth*d));c.height=Math.max(2,Math.floor(innerHeight*d));c.style.width=innerWidth+'px';c.style.height=innerHeight+'px'};fit();
+  const frame=()=>{if(done)return;raf=requestAnimationFrame(frame);if(v.readyState<2)return;const W=c.width,H=c.height,vw=v.videoWidth||1080,vh=v.videoHeight||1920;ctx.clearRect(0,0,W,H);const sc=Math.min(W/vw,H/vh)*.98,dw=vw*sc,dh=vh*sc,dx=(W-dw)/2,dy=(H-dh)/2-H*.035;ctx.drawImage(v,dx,dy,dw,dh);let im;try{im=ctx.getImageData(Math.max(0,dx|0),Math.max(0,dy|0),Math.min(W,Math.ceil(dw)),Math.min(H,Math.ceil(dh)))}catch(e){return}const d=im.data;for(let i=0;i<d.length;i+=4){const r=d[i],g=d[i+1],b=d[i+2];const mx=Math.max(r,g,b),mn=Math.min(r,g,b),spread=mx-mn,avg=(r+g+b)/3;/* remove baked checkerboard / neutral background, preserve brown bear, pink hearts, gold */const nearNeutral=spread<18;const lightNeutral=nearNeutral&&avg>118;const midNeutral=nearNeutral&&avg>72&&avg<180;let strength=0;if(lightNeutral)strength=Math.min(1,(avg-105)/55+.35);else if(midNeutral)strength=.45;/* also soften pale checker squares */if(Math.abs(r-g)<12&&Math.abs(g-b)<12&&avg>58)strength=Math.max(strength,Math.min(1,(avg-55)/80));if(strength>0){d[i+3]=Math.round(255*(1-strength));}}ctx.putImageData(im,Math.max(0,dx|0),Math.max(0,dy|0))};
+  const finish=()=>{if(done)return;done=true;cancelAnimationFrame(raf);stage.classList.add('leaving');setTimeout(()=>stage.remove(),650)};
+  v.currentTime=0;v.play().then(frame).catch(()=>{});v.addEventListener('ended',finish,{once:true});v.addEventListener('error',()=>setTimeout(finish,1800),{once:true});setTimeout(finish,10500);
+}
+
 function playGiftEvent(event){
   const gift=giftCatalog().find(g=>g.id===event.gift)||{id:event.gift,name:event.gift,emoji:event.emoji||GIFT_EMOJI[event.gift]||'🎁',cost:event.cost||0,epic:Boolean(event.epic),effect:'pop'};
   if(gift.id==='lion'){showPremiumLionGift(event.fromName||nameOf(event.from),event.toName||nameOf(event.to));return;}
@@ -1123,6 +1136,7 @@ function playGiftEvent(event){
   if(gift.id==='aurakg'){showAurakgGift(event.fromName||nameOf(event.from),event.toName||nameOf(event.to));return;}
   if(gift.id==='bauri_vip'){if(String(event.from)===String(playerId)&&Date.now()-(window.__bauriLocalSentAt||0)<20000)return;showBauriVipGift(event.fromName||nameOf(event.from),event.toName||nameOf(event.to),event.to,giftElForPlayer(event.to));return;}
   if(gift.id==='rose_love_20260923'){showRoseVipGift(gift,event.fromName||nameOf(event.from),event.toName||nameOf(event.to),event.to,giftElForPlayer(event.to));return;}
+  if(gift.id==='teddy_vip_20260923'){showTeddyVipGift(gift,event.fromName||nameOf(event.from),event.toName||nameOf(event.to),event.to,giftElForPlayer(event.to));return;}
   if(gift.id==='teddy_vip_20260923'){showTeddyVipGift(gift,event.fromName||nameOf(event.from),event.toName||nameOf(event.to),event.to,giftElForPlayer(event.to));return;}
   if(gift.id!=='kolunan_emne_kelet'){kolunanStickerPlayers.delete(String(event.to));giftElForPlayer(event.to)?.querySelector('.kolunanSticker')?.remove();}
   if(gift.id==='kolunan_emne_kelet'){
