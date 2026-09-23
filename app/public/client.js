@@ -1096,10 +1096,15 @@ function showSeniSuyomGift(gift,from,to,targetId,targetEl){
 function showRoseVipGift(gift,from,to,targetId,targetEl){
   const target=targetEl||giftElForPlayer(targetId);
   const stage=document.createElement('div');stage.className='roseVipOverlay';
-  stage.innerHTML=`<div class="roseVipFlash"></div><div class="roseVipRays"></div><div class="roseVipAura"></div><div class="roseVipPetals">${Array.from({length:42},(_,i)=>`<i style="--a:${i*8.57}deg;--d:${(i%12)*.055}s;--r:${110+(i%7)*25}px">${i%4===0?'♥':'✦'}</i>`).join('')}</div><div class="roseVipSparkles">${Array.from({length:34},(_,i)=>`<i style="--x:${5+(i*37)%90}%;--y:${7+(i*53)%84}%;--d:${(i%10)*.08}s">✦</i>`).join('')}</div><video class="roseVipVideo" src="${esc(gift.videoUrl)}" autoplay muted playsinline></video><div class="roseVipLabel"><b>VIP · ${esc(gift.name||'Роза')}</b><small>${esc(from||'Игрок')} → ${esc(to||'Игрок')}</small></div>`;
+  stage.innerHTML=`<div class="roseVipFlash"></div><div class="roseVipRays"></div><div class="roseVipAura"></div><div class="roseVipPetals">${Array.from({length:52},(_,i)=>`<i style="--a:${i*6.92}deg;--d:${(i%13)*.05}s;--r:${130+(i%8)*28}px">${i%4===0?'♥':'✦'}</i>`).join('')}</div><div class="roseVipSparkles">${Array.from({length:44},(_,i)=>`<i style="--x:${4+(i*37)%92}%;--y:${5+(i*53)%88}%;--d:${(i%11)*.07}s">✦</i>`).join('')}</div><canvas class="roseVipCanvas"></canvas><video class="roseVipSource" src="${esc(gift.videoUrl)}" muted playsinline preload="auto"></video><div class="roseVipLabel"><b>VIP · ${esc(gift.name||'Роза')}</b><small>${esc(from||'Игрок')} → ${esc(to||'Игрок')}</small></div>`;
   document.body.appendChild(stage);giftImpact({effect:'romance'},target);
-  const v=stage.querySelector('video');let done=false;const finish=()=>{if(done)return;done=true;stage.classList.add('leaving');setTimeout(()=>stage.remove(),750)};
-  if(v){v.currentTime=0;v.play().catch(()=>{});v.addEventListener('ended',finish,{once:true});v.addEventListener('error',()=>setTimeout(finish,2200),{once:true})}setTimeout(finish,10500);
+  const v=stage.querySelector('.roseVipSource'),c=stage.querySelector('.roseVipCanvas'),ctx=c.getContext('2d',{willReadFrequently:true});
+  let done=false,raf=0;
+  const resize=()=>{const d=Math.min(devicePixelRatio||1,1.5);c.width=Math.max(2,Math.floor(innerWidth*d));c.height=Math.max(2,Math.floor(innerHeight*d));c.style.width=innerWidth+'px';c.style.height=innerHeight+'px'};resize();
+  const draw=()=>{if(done)return;raf=requestAnimationFrame(draw);if(!v||v.readyState<2)return;const W=c.width,H=c.height;ctx.clearRect(0,0,W,H);const vw=v.videoWidth||1080,vh=v.videoHeight||1920;const scale=Math.min(W/vw,H/vh)*1.42;const dw=vw*scale,dh=vh*scale,dx=(W-dw)/2,dy=(H-dh)/2-H*.08;ctx.drawImage(v,dx,dy,dw,dh);let im;try{im=ctx.getImageData(0,0,W,H)}catch{return}const d=im.data;for(let i=0;i<d.length;i+=4){const r=d[i],g=d[i+1],b=d[i+2];const green=g-Math.max(r,b);if(g>80&&green>18){let a=255-Math.min(255,(green-18)*7);if(g>r*1.12&&g>b*1.08)a=Math.min(a,110);d[i+3]=a;if(a<220){const spill=Math.max(0,g-Math.max(r,b));d[i+1]=Math.max(Math.max(r,b),g-spill*.8)}}}ctx.putImageData(im,0,0)};
+  const finish=()=>{if(done)return;done=true;cancelAnimationFrame(raf);stage.classList.add('leaving');setTimeout(()=>stage.remove(),750)};
+  if(v){v.currentTime=0;v.play().then(draw).catch(()=>{});v.addEventListener('ended',finish,{once:true});v.addEventListener('error',()=>setTimeout(finish,2200),{once:true})}
+  addEventListener('resize',resize,{once:true});setTimeout(finish,10500);
 }
 function playGiftEvent(event){
   const gift=giftCatalog().find(g=>g.id===event.gift)||{id:event.gift,name:event.gift,emoji:event.emoji||GIFT_EMOJI[event.gift]||'🎁',cost:event.cost||0,epic:Boolean(event.epic),effect:'pop'};
