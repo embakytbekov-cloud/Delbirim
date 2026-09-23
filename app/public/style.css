@@ -1420,3 +1420,14 @@ body.heartDuelActive .centerBottle{visibility:hidden!important;opacity:0!importa
 
 /* Flow checkerboard removal polish */
 .roseVipCanvas{mix-blend-mode:normal!important;filter:drop-shadow(0 0 12px rgba(255,45,105,.72)) drop-shadow(0 0 24px rgba(255,153,185,.38))!important}
+
+/* iPhone Rose gift viewport fit — slightly larger and edge-aligned without cropping. */
+@supports (-webkit-touch-callout: none){
+  .roseVipOverlay{width:100vw!important;height:100dvh!important;inset:0!important;overflow:hidden!important}
+  .roseVipCanvas{width:100vw!important;height:100dvh!important;transform:scale(1.035)!important;transform-origin:50% 47%!important}
+  .roseVipAura{transform:translate(-50%,-50%) scale(1.04)!important}
+  .roseVipLabel{bottom:max(2.5vh,env(safe-area-inset-bottom))!important}
+}
+@media (max-width:430px) and (orientation:portrait){
+  .roseVipCanvas{transform:scale(1.06)!important;transform-origin:50% 46%!important}
+}
