@@ -1411,3 +1411,6 @@ body.heartDuelActive .centerBottle{visibility:hidden!important;opacity:0!importa
 
 /* Rose visibility correction: preserve rose/gold subject while keying green. */
 .roseVipCanvas{transform:scale(.92)!important;transform-origin:50% 45%!important;filter:drop-shadow(0 0 18px #ff2f72) drop-shadow(0 0 42px #ff7daa88)!important}.roseVipOverlay .roseVipAura{opacity:.52!important}.roseVipOverlay .roseVipRays{opacity:.45!important}.roseVipOverlay .roseVipLabel{bottom:4vh!important}@media(max-width:520px){.roseVipCanvas{transform:scale(.96)!important;transform-origin:50% 43%!important}}
+
+/* Rose chroma cleanup: canvas only, no rectangular media background. */
+.roseVipOverlay,.roseVipCanvas{background:transparent!important}.roseVipSource{display:block!important;position:fixed!important;left:-9999px!important;top:-9999px!important;width:2px!important;height:2px!important;opacity:.001!important}.roseVipCanvas{transform:scale(.90)!important;filter:drop-shadow(0 0 14px #ff3d78) drop-shadow(0 0 30px #ff8aaf66)!important}
