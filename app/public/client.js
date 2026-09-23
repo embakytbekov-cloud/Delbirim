@@ -1096,15 +1096,26 @@ function showSeniSuyomGift(gift,from,to,targetId,targetEl){
 function showRoseVipGift(gift,from,to,targetId,targetEl){
   const target=targetEl||giftElForPlayer(targetId);
   const stage=document.createElement('div');stage.className='roseVipOverlay';
-  stage.innerHTML=`<div class="roseVipFlash"></div><div class="roseVipRays"></div><div class="roseVipAura"></div><div class="roseVipPetals">${Array.from({length:52},(_,i)=>`<i style="--a:${i*6.92}deg;--d:${(i%13)*.05}s;--r:${130+(i%8)*28}px">${i%4===0?'♥':'✦'}</i>`).join('')}</div><div class="roseVipSparkles">${Array.from({length:44},(_,i)=>`<i style="--x:${4+(i*37)%92}%;--y:${5+(i*53)%88}%;--d:${(i%11)*.07}s">✦</i>`).join('')}</div><canvas class="roseVipCanvas"></canvas><video class="roseVipSource" src="${esc(gift.videoUrl)}" muted playsinline preload="auto"></video><div class="roseVipLabel"><b>VIP · ${esc(gift.name||'Роза')}</b><small>${esc(from||'Игрок')} → ${esc(to||'Игрок')}</small></div>`;
+  stage.innerHTML=`<div class="roseVipFlash"></div><div class="roseVipRays"></div><div class="roseVipPetals">${Array.from({length:40},(_,i)=>`<i style="--a:${i*9}deg;--d:${(i%10)*.06}s;--r:${95+(i%7)*23}px">${i%4===0?'♥':'✦'}</i>`).join('')}</div><canvas class="roseVipCanvas"></canvas><video class="roseVipSource" src="${esc(gift.videoUrl)}" muted playsinline preload="auto" crossorigin="anonymous"></video><div class="roseVipLabel"><b>VIP · ${esc(gift.name||'Роза')}</b><small>${esc(from||'Игрок')} → ${esc(to||'Игрок')}</small></div>`;
   document.body.appendChild(stage);giftImpact({effect:'romance'},target);
   const v=stage.querySelector('.roseVipSource'),c=stage.querySelector('.roseVipCanvas'),ctx=c.getContext('2d',{willReadFrequently:true});
+  const work=document.createElement('canvas'),wctx=work.getContext('2d',{willReadFrequently:true});
   let done=false,raf=0;
-  const resize=()=>{const d=Math.min(devicePixelRatio||1,1.5);c.width=Math.max(2,Math.floor(innerWidth*d));c.height=Math.max(2,Math.floor(innerHeight*d));c.style.width=innerWidth+'px';c.style.height=innerHeight+'px'};resize();
-  const draw=()=>{if(done)return;raf=requestAnimationFrame(draw);if(!v||v.readyState<2)return;const W=c.width,H=c.height;ctx.clearRect(0,0,W,H);const vw=v.videoWidth||1080,vh=v.videoHeight||1920;const scale=Math.min(W/vw,H/vh)*0.92;const dw=vw*scale,dh=vh*scale,dx=(W-dw)/2,dy=(H-dh)/2-H*.03;ctx.drawImage(v,dx,dy,dw,dh);let im;try{im=ctx.getImageData(0,0,W,H)}catch{return}const d=im.data;for(let i=0;i<d.length;i+=4){const r=d[i],g=d[i+1],b=d[i+2];const maxRB=Math.max(r,b),green=g-maxRB;if(g>55&&g>r*1.05&&g>b*1.03&&green>8){const strength=Math.min(255,(green-8)*14);d[i+3]=Math.max(0,255-strength);if(d[i+3]<245){const neutral=maxRB;d[i+1]=neutral}}}ctx.putImageData(im,0,0)};
-  const finish=()=>{if(done)return;done=true;cancelAnimationFrame(raf);stage.classList.add('leaving');setTimeout(()=>stage.remove(),750)};
-  if(v){v.currentTime=0;v.play().then(draw).catch(()=>{});v.addEventListener('ended',finish,{once:true});v.addEventListener('error',()=>setTimeout(finish,2200),{once:true})}
-  addEventListener('resize',resize,{once:true});setTimeout(finish,10500);
+  const fit=()=>{const d=Math.min(devicePixelRatio||1,1.35);c.width=Math.max(2,Math.floor(innerWidth*d));c.height=Math.max(2,Math.floor(innerHeight*d));c.style.width=innerWidth+'px';c.style.height=innerHeight+'px'};fit();
+  const render=()=>{if(done)return;raf=requestAnimationFrame(render);if(!v||v.readyState<2||!v.videoWidth)return;
+    const maxW=Math.min(540,v.videoWidth),scale=maxW/v.videoWidth,sw=Math.max(2,Math.round(v.videoWidth*scale)),sh=Math.max(2,Math.round(v.videoHeight*scale));
+    if(work.width!==sw||work.height!==sh){work.width=sw;work.height=sh}
+    wctx.drawImage(v,0,0,sw,sh);let im;try{im=wctx.getImageData(0,0,sw,sh)}catch{return}const d=im.data;
+    for(let i=0;i<d.length;i+=4){let r=d[i],g=d[i+1],b=d[i+2];const maxrb=Math.max(r,b),minrb=Math.min(r,b),dom=g-maxrb;
+      if(g>55&&dom>8){let alpha=255;if(dom>70)alpha=0;else if(dom>45)alpha=28;else if(dom>28)alpha=78;else if(dom>16)alpha=145;else alpha=205;d[i+3]=Math.min(d[i+3],alpha);if(alpha>0){const neutral=(r+b)*.5;d[i+1]=Math.min(g,neutral+10)}}
+      if(g>r*1.22&&g>b*1.18&&g>70)d[i+3]=Math.min(d[i+3],36);
+    }
+    wctx.putImageData(im,0,0);
+    const W=c.width,H=c.height;ctx.clearRect(0,0,W,H);const targetH=H*.68,dw=targetH*(v.videoWidth/v.videoHeight),dh=targetH,dx=(W-dw)/2,dy=H*.08;ctx.drawImage(work,dx,dy,dw,dh);
+  };
+  const finish=()=>{if(done)return;done=true;cancelAnimationFrame(raf);stage.classList.add('leaving');setTimeout(()=>stage.remove(),700)};
+  if(v){v.currentTime=0;v.addEventListener('loadeddata',()=>{v.play().then(render).catch(()=>{})},{once:true});v.addEventListener('ended',finish,{once:true});v.addEventListener('error',()=>setTimeout(finish,1800),{once:true});v.play().then(render).catch(()=>{})}
+  addEventListener('resize',fit,{once:true});setTimeout(finish,10500);
 }
 function playGiftEvent(event){
   const gift=giftCatalog().find(g=>g.id===event.gift)||{id:event.gift,name:event.gift,emoji:event.emoji||GIFT_EMOJI[event.gift]||'🎁',cost:event.cost||0,epic:Boolean(event.epic),effect:'pop'};
