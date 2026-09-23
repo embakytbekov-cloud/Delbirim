@@ -1120,6 +1120,14 @@ function renderRouletteItem(){const it=ROULETTE_ITEMS[rouletteItemKey]||ROULETTE
 renderRouletteItem();
 function chooseRouletteItem(key){if(!ROULETTE_ITEMS[key])return;rouletteItemKey=key;localStorage.setItem('kissmeet.rouletteItem',rouletteItemKey);renderRouletteItem();try{navigator.vibrate?.(15)}catch{}}
 
+// Bind settings rows after roulette helpers are initialized.
+$('#languageSettingsBtn').onclick=()=>{$('#settingsMenuView').classList.add('hidden');$('#settingsProfileView').classList.add('hidden');$('#settingsRouletteView').classList.add('hidden');$('#settingsLanguageView').classList.remove('hidden');applyAppLanguage()};
+$('#rouletteSettingsBtn').onclick=()=>{$('#settingsMenuView').classList.add('hidden');$('#settingsProfileView').classList.add('hidden');$('#settingsLanguageView').classList.add('hidden');$('#settingsRouletteView').classList.remove('hidden');renderRouletteItem()};
+$('#settingsRouletteBack').onclick=()=>{$('#settingsRouletteView').classList.add('hidden');$('#settingsMenuView').classList.remove('hidden')};
+$('#settingsRouletteClose').onclick=closeSettings;
+$('#settingsRouletteView').onclick=e=>{const b=e.target.closest('[data-roulette-item]');if(!b)return;chooseRouletteItem(b.dataset.rouletteItem)};
+$('#logoutBtn').onclick=()=>{closeSettings();toast(L().exitDemo)};
+
 function demoSpin(){
   if(demoSpinning||heartDuelOpen)return;
   const self=document.querySelector('.person.self');
@@ -1338,7 +1346,7 @@ const tabs=document.querySelectorAll('#giftTabs button');const tv=[`🔥 ${d.pop
 setTxt('#themeTitle',d.chooseTheme);const ctb=document.querySelector('#customThemeBtn b');if(ctb)ctb.textContent=d.customBg;setTxt('.placesTitle',d.romantic);const tb=document.querySelector('.neonTableText b');if(tb)tb.textContent=d.table;
 document.querySelectorAll('[data-app-lang]').forEach(b=>b.classList.toggle('active',b.dataset.appLang===appLang));
 };
-$('#languageSettingsBtn').onclick=()=>{$('#settingsMenuView').classList.add('hidden');$('#settingsProfileView').classList.add('hidden');$('#settingsLanguageView').classList.remove('hidden');applyAppLanguage()};$('#rouletteSettingsBtn').onclick=()=>{$('#settingsMenuView').classList.add('hidden');$('#settingsProfileView').classList.add('hidden');$('#settingsLanguageView').classList.add('hidden');$('#settingsRouletteView').classList.remove('hidden');renderRouletteItem()};$('#settingsRouletteBack').onclick=()=>{$('#settingsRouletteView').classList.add('hidden');$('#settingsMenuView').classList.remove('hidden')};$('#settingsRouletteClose').onclick=closeSettings;$('#settingsRouletteView').onclick=e=>{const b=e.target.closest('[data-roulette-item]');if(!b)return;chooseRouletteItem(b.dataset.rouletteItem)};
+
 $('#settingsLanguageBack').onclick=()=>{$('#settingsLanguageView').classList.add('hidden');$('#settingsMenuView').classList.remove('hidden')};
 $('#settingsLanguageClose').onclick=closeSettings;
 document.querySelectorAll('[data-app-lang]').forEach(btn=>btn.onclick=()=>{appLang=btn.dataset.appLang;localStorage.setItem('kissmeet.lang',appLang);applyAppLanguage();setTimeout(()=>{$('#settingsLanguageView').classList.add('hidden');$('#settingsMenuView').classList.remove('hidden')},140)});
