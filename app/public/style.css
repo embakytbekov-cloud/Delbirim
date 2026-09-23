@@ -1417,3 +1417,6 @@ body.heartDuelActive .centerBottle{visibility:hidden!important;opacity:0!importa
 
 /* Rose final polish for new no-background asset */
 .roseVipOverlay{background:transparent!important}.roseVipCanvas{transform:scale(.86)!important;transform-origin:50% 44%!important;filter:drop-shadow(0 0 12px #ff3c76) drop-shadow(0 0 26px #ff9aba55)!important}.roseVipOverlay .roseVipAura{opacity:.38!important}.roseVipOverlay .roseVipRays{opacity:.28!important}.roseVipOverlay .roseVipSparkles{opacity:.8!important}.roseVipOverlay .roseVipPetals{opacity:.9!important}.roseVipOverlay .roseVipLabel{bottom:3.7vh!important}@media(max-width:520px){.roseVipCanvas{transform:scale(.90)!important;transform-origin:50% 42%!important}}
+
+/* Flow checkerboard removal polish */
+.roseVipCanvas{mix-blend-mode:normal!important;filter:drop-shadow(0 0 12px rgba(255,45,105,.72)) drop-shadow(0 0 24px rgba(255,153,185,.38))!important}
