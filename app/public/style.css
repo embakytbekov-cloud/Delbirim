@@ -1445,9 +1445,10 @@ body.heartDuelActive .centerBottle{visibility:hidden!important;opacity:0!importa
 /* Kök Börü premium gift: preserve visible players/chat behind the gift. */
 .giftVideoStage.kokBoruOverlay{position:fixed!important;inset:0!important;z-index:95!important;background:transparent!important;pointer-events:none!important;overflow:hidden!important;display:flex!important;align-items:center!important;justify-content:center!important;}
 .giftVideoStage.kokBoruOverlay .giftVideoGlow,.giftVideoStage.kokBoruOverlay .giftVideoHearts,.giftVideoStage.kokBoruOverlay .giftVideoBadge,.giftVideoStage.kokBoruOverlay .giftVideoShine,.giftVideoStage.kokBoruOverlay .giftVideoTopControls{display:none!important;}
-.giftVideoStage.kokBoruOverlay .giftVideoCard{position:relative!important;width:min(92vw,620px)!important;height:min(76vh,900px)!important;max-height:calc(100dvh - 110px)!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;overflow:visible!important;transform:none!important;animation:kokBoruEnter .75s cubic-bezier(.16,.88,.22,1) both!important;pointer-events:none!important;}
-.giftVideoStage.kokBoruOverlay .giftLoveVideo{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:contain!important;background:transparent!important;border:0!important;mix-blend-mode:normal!important;filter:drop-shadow(0 16px 26px rgba(0,0,0,.28));}
+.giftVideoStage.kokBoruOverlay .giftVideoCard{position:relative!important;width:100vw!important;height:100dvh!important;max-width:430px!important;max-height:932px!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;overflow:hidden!important;transform:none!important;animation:kokBoruEnter .75s cubic-bezier(.16,.88,.22,1) both!important;pointer-events:none!important;}
+.giftVideoStage.kokBoruOverlay .giftLoveVideo.kokBoruSource{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important;}
+.giftVideoStage.kokBoruOverlay .kokBoruCanvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;display:block!important;background:transparent!important;}
 .giftVideoStage.kokBoruOverlay.leaving{animation:kokBoruExit .42s ease forwards!important;}
-@keyframes kokBoruEnter{0%{opacity:0;transform:scale(.72) translateY(28px)}65%{opacity:1;transform:scale(1.035) translateY(0)}100%{opacity:1;transform:scale(1)}}
-@keyframes kokBoruExit{to{opacity:0;transform:scale(.92)}}
-@media(max-width:520px){.giftVideoStage.kokBoruOverlay .giftVideoCard{width:96vw!important;height:70vh!important;max-height:720px!important;}}
+@keyframes kokBoruEnter{0%{opacity:0;transform:scale(.72) translateY(28px)}65%{opacity:1;transform:scale(1.02) translateY(0)}100%{opacity:1;transform:scale(1)}}
+@keyframes kokBoruExit{to{opacity:0;transform:scale(.94)}}
+@media(max-width:520px){.giftVideoStage.kokBoruOverlay .giftVideoCard{width:100vw!important;height:100dvh!important;max-width:none!important;max-height:none!important;}}}

@@ -1051,6 +1051,13 @@ function showSeniSuyomGift(gift,from,to,targetId,targetEl){
   chat.appendChild(stage);
   const restore=document.createElement('div');restore.className='giftVideoRestore';restore.innerHTML=`<button class="giftVideoShow" type="button">Показать</button><button class="giftVideoSound giftVideoSoundMini" type="button" aria-label="Выключить звук">🔊</button>`;chat.appendChild(restore);
   const v=stage.querySelector('video');
+  if(gift.id==='kok_boru_20260923'&&v){
+    const canvas=document.createElement('canvas');canvas.className='kokBoruCanvas';stage.querySelector('.giftVideoCard')?.appendChild(canvas);v.classList.add('kokBoruSource');
+    const ctx=canvas.getContext('2d',{willReadFrequently:true});let raf=0,stopped=false;
+    const fit=()=>{const d=Math.min(devicePixelRatio||1,1.5),r=stage.getBoundingClientRect();canvas.width=Math.max(2,Math.floor(r.width*d));canvas.height=Math.max(2,Math.floor(r.height*d));canvas.style.width=r.width+'px';canvas.style.height=r.height+'px'};fit();
+    const draw=()=>{if(stopped)return;raf=requestAnimationFrame(draw);if(v.readyState<2)return;const W=canvas.width,H=canvas.height,vw=v.videoWidth||1080,vh=v.videoHeight||1920;ctx.clearRect(0,0,W,H);const sc=Math.min(W/vw,H/vh),dw=vw*sc,dh=vh*sc,dx=(W-dw)/2,dy=(H-dh)/2;ctx.drawImage(v,dx,dy,dw,dh);let im;try{im=ctx.getImageData(Math.max(0,dx|0),Math.max(0,dy|0),Math.min(W,Math.ceil(dw)),Math.min(H,Math.ceil(dh)))}catch{return}const d=im.data;for(let i=0;i<d.length;i+=4){const r=d[i],g=d[i+1],b=d[i+2],hi=Math.max(r,g,b),lo=Math.min(r,g,b),spread=hi-lo,lum=(r+g+b)/3;if(lum>145&&spread<30){const a=Math.min(1,Math.max(0,(lum-145)/70))*Math.min(1,Math.max(0,(30-spread)/20));d[i+3]=Math.round(255*(1-a));}}ctx.putImageData(im,Math.max(0,dx|0),Math.max(0,dy|0));};
+    v.addEventListener('play',()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(draw)},{once:true});v.addEventListener('ended',()=>{stopped=true;cancelAnimationFrame(raf)},{once:true});
+  }
   const soundButtons=[...stage.querySelectorAll('.giftVideoSound'),...restore.querySelectorAll('.giftVideoSound')];
   const syncSound=()=>{soundButtons.forEach(btn=>{btn.textContent=v?.muted?'🔇':'🔊';btn.setAttribute('aria-label',v?.muted?'Включить звук':'Выключить звук')})};
   const toggleSound=()=>{if(!v)return;v.muted=!v.muted;syncSound()};
