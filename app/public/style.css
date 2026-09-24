@@ -1451,4 +1451,4 @@ body.heartDuelActive .centerBottle{visibility:hidden!important;opacity:0!importa
 .giftVideoStage.kokBoruOverlay.leaving{animation:kokBoruExit .42s ease forwards!important;}
 @keyframes kokBoruEnter{0%{opacity:0;transform:scale(.72) translateY(28px)}65%{opacity:1;transform:scale(1.02) translateY(0)}100%{opacity:1;transform:scale(1)}}
 @keyframes kokBoruExit{to{opacity:0;transform:scale(.94)}}
-@media(max-width:520px){.giftVideoStage.kokBoruOverlay .giftVideoCard{width:100vw!important;height:100dvh!important;max-width:none!important;max-height:none!important;}}}
+@media(max-width:520px){.giftVideoStage.kokBoruOverlay .giftVideoCard{width:100vw!important;height:100dvh!important;max-width:none!important;max-height:none!important;}}
