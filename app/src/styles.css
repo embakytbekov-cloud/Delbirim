@@ -1,0 +1,6 @@
+
+/* VIP roulette: raise further into the open center between players */
+.vipRoomActive .centerBottle{top:44
+/* VIP roulette: raise further into the open center between players */
+.vipRoomActive .centerBottle{top:44%!important;}
+@media(max-width:520px){.vipRoomActive .centerBottle{top:43%!important;}}
