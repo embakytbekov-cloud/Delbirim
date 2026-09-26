@@ -1519,3 +1519,11 @@ body.heartDuelActive .centerBottle{visibility:hidden!important;opacity:0!importa
 .vipRoomActive .photo{width:72px!important;height:82px!important}
 .vipRoomActive .centerBottle{left:50%!important;top:51%!important;transform:translate(-50%,-50%) scale(.78)!important;z-index:5!important}
 @media (max-width:520px) and (max-height:720px){.vipRoomActive .people{inset:88px 0 52px!important}.vipRoomActive .person{width:72px!important}.vipRoomActive .photo{width:66px!important;height:75px!important}}
+
+/* VIP center controls: keep roulette centered between player seats */
+.vipRoomActive .centerBottle{top:43%!important;transform:translate(-50%,-50%) scale(.82)!important}
+.vipRoomActive .centerBottle .turnText{top:-8px!important}
+.vipRoomActive .centerBottle .spin{bottom:-42px!important}
+.vipRoomActive .neonTableText b{font-size:10px!important;max-width:92px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vipRoomActive .neonTableText strong{font-size:15px!important;letter-spacing:.8px}
+@media(max-width:520px){.vipRoomActive .centerBottle{top:42%!important;transform:translate(-50%,-50%) scale(.76)!important}.vipRoomActive .centerBottle .spin{bottom:-38px!important}}

@@ -698,7 +698,7 @@ function applyVipRoomTheme(){
   table?.style.setProperty('background',cfg.bg,'important');
   if(video){video.pause();video.classList.add('hidden')}
   const turn=document.querySelector('#turnText');if(turn)turn.textContent=cfg.label;
-  const btn=document.querySelector('#tableButton');if(btn){btn.classList.add('vipCurrentTable');btn.title=cfg.label;btn.setAttribute('aria-label',cfg.label)}
+  const btn=document.querySelector('#tableButton');if(btn){btn.classList.add('vipCurrentTable');btn.title=cfg.label;btn.setAttribute('aria-label',cfg.label);const label=btn.querySelector('.neonTableText b'),num=btn.querySelector('.neonTableText strong');if(label)label.textContent=cfg.label.replace(/^👑\s*/,'');if(num)num.textContent='VIP'}
   document.body.classList.add('vipRoomActive');
 }
 
