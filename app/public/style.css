@@ -122,11 +122,16 @@ body.heartDuelActive .centerBottle{visibility:hidden!important;opacity:0!importa
 @keyframes slapPhotoShake{0%,100%{transform:translateX(0) rotate(0)}20%{transform:translateX(9px) rotate(2.5deg)}42%{transform:translateX(-8px) rotate(-2deg)}64%{transform:translateX(6px) rotate(1.4deg)}82%{transform:translateX(-3px) rotate(-.8deg)}}
 @media(max-width:520px){.duel3dFx.targetRight{left:78%!important;top:99px!important}}
 
-/* Telegram mini-app compact viewport proportions (match reference layout). */
+/* Telegram mini-app compact viewport proportions (match reference layout).
+   --tg-vh is set from window.Telegram.WebApp.viewportHeight in client.js and kept
+   live on expand/keyboard/orientation changes; 100dvh is only the pre-JS fallback.
+   The game area is a flex child sized by percentage (57%), never a fixed px
+   min/max — a fixed px clamp is what previously ate almost the whole screen on
+   short Telegram viewports. */
 @media (max-width:520px){
   html,body{height:100%;min-height:100%;overflow:hidden}
-  .game{height:100dvh;min-height:0!important;display:flex;flex-direction:column;overflow:hidden}
-  .table{height:52dvh!important;min-height:520px!important;max-height:585px!important;flex:0 0 auto}
+  .game{height:var(--tg-vh,100dvh);min-height:0!important;display:flex;flex-direction:column;overflow:hidden}
+  .table{flex:0 0 57%;height:auto!important;min-height:0!important;max-height:none!important;overflow:hidden}
   .chatArea{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;overflow:hidden}
   .feed{flex:1 1 auto;min-height:0!important;max-height:none!important;overflow:auto;padding-top:10px;padding-bottom:10px}
   .composer{position:relative!important;flex:0 0 auto;height:58px!important}
@@ -142,8 +147,10 @@ body.heartDuelActive .centerBottle{visibility:hidden!important;opacity:0!importa
   .heartDuel{top:51%!important;transform:translate(-50%,-50%) scale(.9)!important;transform-origin:center!important}
 }
 
+/* Extra-short viewports (small phones, or Telegram not yet expanded): the table
+   keeps the same 57% share of the real height, we just shrink the avatars
+   further so nothing inside that share gets cut off. */
 @media (max-width:520px) and (max-height:720px){
-  .table{height:50dvh!important;min-height:470px!important;max-height:520px!important}
   .people{inset:88px 0 52px!important}
   .person{width:72px!important}
   .photo{width:66px!important;height:75px!important}
@@ -1543,5 +1550,3 @@ body.heartDuelActive .centerBottle{visibility:hidden!important;opacity:0!importa
 .vipRoomActive .centerBottle .spin{position:absolute!important;left:50%!important;top:128px!important;bottom:auto!important;transform:translateX(-50%)!important;white-space:nowrap!important}
 @media(max-width:520px){.vipRoomActive .centerBottle{top:39%!important}.vipRoomActive .centerBottle .turnText{top:-42px!important}.vipRoomActive .centerBottle .spin{top:108px!important}}
 
-/* Telegram iPhone viewport fix */
-html,body{width:100%;max-width:100%;min-height:100%;margin:0;overflow-x:hidden}body{min-height:100dvh}.game{width:100%;max-width:none;min-height:100dvh;margin:0}.table{width:100%;height:58dvh;min-height:0}.chatArea{width:100%;min-height:42dvh}@media(max-width:520px){.table{height:58dvh;min-height:0}.people{inset:100px 0 58px}.composer{padding-bottom:calc(8px + env(safe-area-inset-bottom))}}
