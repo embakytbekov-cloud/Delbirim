@@ -1270,7 +1270,9 @@ if(tg){
 }
 const savedTheme=localStorage.getItem('kissmeet.theme')||'dark';
 const savedPlace=localStorage.getItem('kissmeet.place');
-if(savedTheme==='custom'){
+if(VIP_ROOM_THEMES[room]){
+  applyVipRoomTheme();
+}else if(savedTheme==='custom'){
   const customBg=localStorage.getItem('kissmeet.customBg');
   if(customBg)applyCustomTheme(customBg); else applyTheme('dark');
 }else if(savedTheme==='city'&&savedPlace){
