@@ -1542,3 +1542,6 @@ body.heartDuelActive .centerBottle{visibility:hidden!important;opacity:0!importa
 .vipRoomActive .centerBottle .turnText{position:absolute!important;left:50%!important;top:-48px!important;transform:translateX(-50%)!important;white-space:nowrap!important}
 .vipRoomActive .centerBottle .spin{position:absolute!important;left:50%!important;top:128px!important;bottom:auto!important;transform:translateX(-50%)!important;white-space:nowrap!important}
 @media(max-width:520px){.vipRoomActive .centerBottle{top:39%!important}.vipRoomActive .centerBottle .turnText{top:-42px!important}.vipRoomActive .centerBottle .spin{top:108px!important}}
+
+/* Telegram iPhone viewport fix */
+html,body{width:100%;max-width:100%;min-height:100%;margin:0;overflow-x:hidden}body{min-height:100dvh}.game{width:100%;max-width:none;min-height:100dvh;margin:0}.table{width:100%;height:58dvh;min-height:0}.chatArea{width:100%;min-height:42dvh}@media(max-width:520px){.table{height:58dvh;min-height:0}.people{inset:100px 0 58px}.composer{padding-bottom:calc(8px + env(safe-area-inset-bottom))}}
