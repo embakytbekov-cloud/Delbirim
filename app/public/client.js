@@ -1436,7 +1436,7 @@ document.querySelector('.trophyPhotoBtn').onclick=openRanking;$('#rankingClose')
   btn.title='Стол '+currentNumber;btn.setAttribute('aria-label','Стол '+currentNumber);
   const modal=document.createElement('div');
   modal.id='tableSwitcher';modal.className='tableSwitcher hidden';
-  modal.innerHTML='<section class="tableSwitcherCard" role="dialog" aria-modal="true"><div class="tableSwitcherHead">Сменить стол</div><button class="tableSwitcherClose" type="button">×</button><button class="tableCreateBtn" type="button">Создать стол</button><button class="tableRandomBtn" type="button">Случайный стол</button><div class="tableSwitcherSub tableFriendsTitle">Друзья и приятели</div><div class="tableFriendsList"></div><div class="tableSwitcherSub">Твои последние столы</div><div class="tableRecentList"></div></section>';
+  modal.innerHTML='<section class="tableSwitcherCard" role="dialog" aria-modal="true"><div class="tableSwitcherHead">Сменить стол</div><button class="tableSwitcherClose" type="button">×</button><button class="tableCreateBtn" type="button">Создать стол</button><button class="tableRandomBtn" type="button">Случайный стол</button><div class="tableSwitcherSub vipTablesTitle">👑 VIP Столы</div><div class="vipTableList"></div><div class="tableSwitcherSub tableFriendsTitle">Друзья и приятели</div><div class="tableFriendsList"></div><div class="tableSwitcherSub">Твои последние столы</div><div class="tableRecentList"></div></section>';
   document.body.appendChild(modal);
   function recent(){try{return JSON.parse(localStorage.getItem('kissmeet.recentTables')||'[]').filter(x=>x&&x.room)}catch(e){return[]}}
   function remember(id){
@@ -1446,6 +1446,18 @@ document.querySelector('.trophyPhotoBtn').onclick=openRanking;$('#rankingClose')
     localStorage.setItem('kissmeet.recentTables',JSON.stringify(rows.slice(0,4)));
   }
   function go(id){remember(id);const u=new URL(location.href);if(id==='main')u.searchParams.delete('room');else u.searchParams.set('room',id);location.href=u.toString()}
+  const VIP_TABLES=[
+    {id:'vip-bishkek',title:'👑 VIP Бишкек',count:'8/10',status:'🎙️ 4 человека говорят',sub:'🇰🇬 Общение, знакомства, музыка',players:[0,1,2,3,4,5,6,7]},
+    {id:'vip-dating',title:'👑 VIP Знакомства',count:'6/10',status:'❤️ Сейчас идёт раунд',sub:'💋 Поцелуй / отказаться',players:[2,4,6,8,9,10]},
+    {id:'vip-usa-kg',title:'👑 VIP USA / KG',count:'9/10',status:'🌎 Кыргыздар в Америке',sub:'🎙️ Голосовой стол',players:[1,3,5,6,7,8,9,10,0]},
+    {id:'vip-rus-kg',title:'👑 VIP RUS / KG',count:'7/10',status:'🇷🇺🇰🇬 Россия × Кыргызстан',sub:'💬 Общение + знакомства',players:[0,2,3,5,7,9,10]},
+    {id:'vip-bishkek-kg',title:'👑 VIP Bishkek KG',count:'8/10',status:'📍 Бишкек · 🇰🇬 Кыргызский стол',sub:'🎙️ Голос + игра',players:[1,2,4,5,6,7,8,10]}
+  ];
+  function renderVipTables(){
+    const box=modal.querySelector('.vipTableList');if(!box)return;
+    box.innerHTML=VIP_TABLES.map(t=>{const avatars=t.players.slice(0,5).map(i=>`<span class="vipTinyAvatar" style="background-image:url(${DEMO[i%DEMO.length].photo})"></span>`).join('');return `<button class="vipTableItem" type="button" data-vip-room="${t.id}"><span class="vipTableMain"><b>${t.title}</b><small>${t.status}</small><em>${t.sub}</em></span><span class="vipTableSide"><strong>${t.count}</strong><span class="vipAvatarStack">${avatars}</span></span></button>`}).join('');
+    box.querySelectorAll('[data-vip-room]').forEach(x=>x.addEventListener('click',()=>go(x.dataset.vipRoom)));
+  }
   function renderFriends(){
     const box=modal.querySelector('.tableFriendsList');
     const demoFriends=(typeof DEMO!=='undefined'&&Array.isArray(DEMO)?DEMO.slice(0,3):[]);
@@ -1459,7 +1471,7 @@ document.querySelector('.trophyPhotoBtn').onclick=openRanking;$('#rankingClose')
     box.innerHTML=rows.map((r,i)=>{const isCreated=!!r.maxPlayers;const icon=r.owner&&r.ownerPhoto?'<span class="tableRecentIcon ownerPhoto" style="background-image:url('+String(r.ownerPhoto).replace(/[\"<>]/g,'')+')"></span>':(isCreated?'':'<span class="tableRecentIcon">'+(i%2?'♜':'♟')+'</span>');const sub=r.owner?'<small class="recentOwnerLabel">Хозяин · '+(r.maxPlayers||6)+' мест</small>':(isCreated?'':'');const cls='tableRecentItem '+(r.room===current?'active ':'')+(isCreated&&!r.owner?'noOwner ':'');return '<button class="'+cls.trim()+'" type="button" data-room="'+r.room+'">'+icon+'<span class="tableRecentMain"><b>#'+r.number+'</b>'+sub+'</span>'+(r.owner?'<span class="tableRecentMeta">◉ 1</span>':'')+'</button>'}).join('');
     box.querySelectorAll('[data-room]').forEach(x=>x.addEventListener('click',()=>go(x.dataset.room)));
   }
-  function open(){remember(current);renderFriends();renderRecent();modal.classList.remove('hidden');document.body.classList.add('modalOpen')}
+  function open(){remember(current);renderVipTables();renderFriends();renderRecent();modal.classList.remove('hidden');document.body.classList.add('modalOpen')}
   function close(){modal.classList.add('hidden');document.body.classList.remove('modalOpen')}
   const HOST_COST=20;
   const createModal=document.createElement('div');
@@ -1469,7 +1481,7 @@ document.querySelector('.trophyPhotoBtn').onclick=openRanking;$('#rankingClose')
   let desiredPlayers=6,ownerEnabled=false;
   const updateCreateUi=()=>{createModal.querySelector('#newTablePlayers').textContent=String(desiredPlayers);createModal.querySelector('.tableOwnerOption').classList.toggle('active',ownerEnabled);createModal.querySelector('#createTableHeartBalance').textContent=String(getHeartBalance())};
   function showCreateTable(){modal.classList.add('hidden');desiredPlayers=6;ownerEnabled=false;const input=createModal.querySelector('#newTableNumber');input.value=String(100+Math.floor(Math.random()*99900));updateCreateUi();createModal.classList.remove('hidden');setTimeout(()=>input.focus(),80)}
-  function hideCreateTable(backToTables=true){createModal.classList.add('hidden');if(backToTables){renderFriends();renderRecent();modal.classList.remove('hidden')}else document.body.classList.remove('modalOpen')}
+  function hideCreateTable(backToTables=true){createModal.classList.add('hidden');if(backToTables){renderVipTables();renderFriends();renderRecent();modal.classList.remove('hidden')}else document.body.classList.remove('modalOpen')}
   function createTable(){showCreateTable()}
   function submitCreateTable(){const input=createModal.querySelector('#newTableNumber');const n=String(input.value||'').replace(/\D/g,'').slice(0,5);if(!n){toast('Выбери номер стола');input.focus();return}if(ownerEnabled&&getHeartBalance()<HOST_COST){toast('Недостаточно сердечек');return}if(ownerEnabled)setHeartBalance(getHeartBalance()-HOST_COST);const id='table-'+n;localStorage.setItem('kissmeet.table.settings.'+id,JSON.stringify({number:n,maxPlayers:desiredPlayers,owner:ownerEnabled?playerId:null,ownerPaid:ownerEnabled?HOST_COST:0}));go(id)}
   function randomTable(){let n=100+Math.floor(Math.random()*900);if(String(n)===currentNumber)n=n===999?100:n+1;go('table-'+n)}
