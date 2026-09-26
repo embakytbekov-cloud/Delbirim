@@ -1447,15 +1447,15 @@ document.querySelector('.trophyPhotoBtn').onclick=openRanking;$('#rankingClose')
   }
   function go(id){remember(id);const u=new URL(location.href);if(id==='main')u.searchParams.delete('room');else u.searchParams.set('room',id);location.href=u.toString()}
   const VIP_TABLES=[
-    {id:'vip-bishkek',title:'👑 VIP Бишкек',count:'8/10',status:'🎙️ 4 человека говорят',sub:'🇰🇬 Общение, знакомства, музыка',players:[0,1,2,3,4,5,6,7]},
-    {id:'vip-dating',title:'👑 VIP Знакомства',count:'6/10',status:'❤️ Сейчас идёт раунд',sub:'💋 Поцелуй / отказаться',players:[2,4,6,8,9,10]},
-    {id:'vip-usa-kg',title:'👑 VIP USA / KG',count:'9/10',status:'🌎 Кыргыздар в Америке',sub:'🎙️ Голосовой стол',players:[1,3,5,6,7,8,9,10,0]},
-    {id:'vip-rus-kg',title:'👑 VIP RUS / KG',count:'7/10',status:'🇷🇺🇰🇬 Россия × Кыргызстан',sub:'💬 Общение + знакомства',players:[0,2,3,5,7,9,10]},
-    {id:'vip-bishkek-kg',title:'👑 VIP Bishkek KG',count:'8/10',status:'📍 Бишкек · 🇰🇬 Кыргызский стол',sub:'🎙️ Голос + игра',players:[1,2,4,5,6,7,8,10]}
+    {id:'vip-bishkek',tone:'gold',icon:'🏙️',title:'VIP Бишкек',count:'8/10',status:'🎙️ 4 человека говорят',sub:'🇰🇬 Общение · знакомства · музыка',players:[0,1,2,3,4,5,6,7],speaker:[0,3,5,7]},
+    {id:'vip-dating',tone:'rose',icon:'💋',title:'VIP Знакомства',count:'6/10',status:'❤️ Сейчас идёт раунд',sub:'💞 Пара выбрана · идёт выбор',players:[2,4,6,8,9,10],speaker:[4]},
+    {id:'vip-usa-kg',tone:'ocean',icon:'🌎',title:'VIP USA / KG',count:'9/10',status:'🌎 Кыргыздар в Америке',sub:'🎙️ Нью-Йорк · Чикаго · LA',players:[1,3,5,6,7,8,9,10,0],speaker:[1,6,8]},
+    {id:'vip-rus-kg',tone:'ruby',icon:'🇷🇺',title:'VIP RUS / KG',count:'7/10',status:'🇷🇺🇰🇬 Россия × Кыргызстан',sub:'💬 Общение · знакомства',players:[0,2,3,5,7,9,10],speaker:[2,7]},
+    {id:'vip-bishkek-kg',tone:'emerald',icon:'🇰🇬',title:'VIP Bishkek KG',count:'8/10',status:'📍 Бишкек · Кыргызский стол',sub:'🎙️ Кыргызча · оюн · таанышуу',players:[1,2,4,5,6,7,8,10],speaker:[2,5,7]}
   ];
   function renderVipTables(){
     const box=modal.querySelector('.vipTableList');if(!box)return;
-    box.innerHTML=VIP_TABLES.map(t=>{const avatars=t.players.slice(0,5).map(i=>`<span class="vipTinyAvatar" style="background-image:url(${DEMO[i%DEMO.length].photo})"></span>`).join('');return `<button class="vipTableItem" type="button" data-vip-room="${t.id}"><span class="vipTableMain"><b>${t.title}</b><small>${t.status}</small><em>${t.sub}</em></span><span class="vipTableSide"><strong>${t.count}</strong><span class="vipAvatarStack">${avatars}</span></span></button>`}).join('');
+    box.innerHTML=VIP_TABLES.map(t=>{const avatars=t.players.slice(0,6).map(i=>`<span class="vipTinyAvatar ${t.speaker.includes(i)?'speaking':''}" style="background-image:url(${DEMO[i%DEMO.length].photo})"><i>${t.speaker.includes(i)?'🎙️':''}</i></span>`).join('');return `<button class="vipTableItem vipTone-${t.tone}" type="button" data-vip-room="${t.id}"><span class="vipGlow"></span><span class="vipIconOrb">${t.icon}</span><span class="vipTableMain"><span class="vipTitleLine"><b><span class="vipCrown">♛</span>${t.title}</b><strong>${t.count}</strong></span><small>${t.status}</small><em>${t.sub}</em><span class="vipAvatarStack">${avatars}</span></span><span class="vipEnter">›</span></button>`}).join('');
     box.querySelectorAll('[data-vip-room]').forEach(x=>x.addEventListener('click',()=>go(x.dataset.vipRoom)));
   }
   function renderFriends(){
