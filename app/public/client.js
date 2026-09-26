@@ -683,6 +683,25 @@ function openThemePicker(){
 }
 function closeThemePicker(){document.querySelector('#themePicker')?.classList.add('hidden')}
 
+
+const VIP_ROOM_THEMES={
+  'vip-bishkek':{theme:'vip-gold',label:'👑 VIP Бишкек',bg:'radial-gradient(circle at 50% 22%,rgba(255,210,96,.26),transparent 28%),linear-gradient(180deg,rgba(18,11,5,.16),rgba(9,5,2,.72)),url(https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1400&q=85) center/cover'},
+  'vip-dating':{theme:'vip-rose',label:'👑 VIP Знакомства',bg:'radial-gradient(circle at 50% 18%,rgba(255,88,153,.30),transparent 30%),linear-gradient(180deg,rgba(54,5,31,.10),rgba(27,4,18,.76)),url(https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=1400&q=85) center/cover'},
+  'vip-usa-kg':{theme:'vip-ocean',label:'👑 VIP USA / KG',bg:'radial-gradient(circle at 50% 18%,rgba(79,164,255,.24),transparent 30%),linear-gradient(180deg,rgba(2,18,36,.12),rgba(3,10,24,.76)),url(https://images.unsplash.com/photo-1518391846015-55a9cc003b25?auto=format&fit=crop&w=1400&q=85) center/cover'},
+  'vip-rus-kg':{theme:'vip-ruby',label:'👑 VIP RUS / KG',bg:'radial-gradient(circle at 50% 18%,rgba(255,67,82,.22),transparent 30%),linear-gradient(180deg,rgba(43,5,9,.08),rgba(25,3,7,.78)),url(https://images.unsplash.com/photo-1513326738677-b964603b136d?auto=format&fit=crop&w=1400&q=85) center/cover'},
+  'vip-bishkek-kg':{theme:'vip-emerald',label:'👑 VIP Bishkek KG',bg:'radial-gradient(circle at 50% 18%,rgba(60,220,151,.22),transparent 30%),linear-gradient(180deg,rgba(2,36,25,.10),rgba(2,20,14,.78)),url(https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1400&q=85) center/cover'}
+};
+function applyVipRoomTheme(){
+  const cfg=VIP_ROOM_THEMES[room];if(!cfg)return;
+  const game=document.querySelector('.game'),table=document.querySelector('.table'),video=document.querySelector('#themeVideoBg');
+  game?.setAttribute('data-theme',cfg.theme);document.documentElement.setAttribute('data-game-theme',cfg.theme);
+  table?.style.setProperty('background',cfg.bg,'important');
+  if(video){video.pause();video.classList.add('hidden')}
+  const turn=document.querySelector('#turnText');if(turn)turn.textContent=cfg.label;
+  const btn=document.querySelector('#tableButton');if(btn){btn.classList.add('vipCurrentTable');btn.title=cfg.label;btn.setAttribute('aria-label',cfg.label)}
+  document.body.classList.add('vipRoomActive');
+}
+
 function isDemoMode(m=lastMsg){
   if(DEMO_PREVIEW)return true;
   if(!m?.view)return true;
@@ -704,7 +723,7 @@ function connect(){
   };
   socket.onclose=()=>setTimeout(connect,1200);
 }
-connect();setInterval(()=>socket?.readyState===1&&socket.send('__ping'),30000);
+connect();applyVipRoomTheme();setInterval(()=>socket?.readyState===1&&socket.send('__ping'),30000);
 
 function demoRoster(){
   const selfPhoto=DEMO[7]?.photo||DEMO[0]?.photo||'';
