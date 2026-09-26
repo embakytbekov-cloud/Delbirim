@@ -1,10 +1,1 @@
-
-/* VIP roulette: raise further into the open center between players */
-.vipRoomActive .centerBottle{top:44
-/* VIP roulette: raise further into the open center between players */
-.vipRoomActive .centerBottle{top:44%!important;}
-@media(max-width:520px){.vipRoomActive .centerBottle{top:43%!important;}}
-
-/* User requested roulette substantially higher: center it in the empty field under top players */
-.vipRoomActive .centerBottle{top:35%!important;}
-@media(max-width:520px){.vipRoomActive .centerBottle{top:34%!important;}}
+/* Runtime game styling lives in public/style.css. */

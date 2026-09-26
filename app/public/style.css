@@ -1527,3 +1527,12 @@ body.heartDuelActive .centerBottle{visibility:hidden!important;opacity:0!importa
 .vipRoomActive .neonTableText b{font-size:10px!important;max-width:92px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .vipRoomActive .neonTableText strong{font-size:15px!important;letter-spacing:.8px}
 @media(max-width:520px){.vipRoomActive .centerBottle{top:42%!important;transform:translate(-50%,-50%) scale(.76)!important}.vipRoomActive .centerBottle .spin{bottom:-38px!important}}
+
+/* VIP roulette = exact main-table roulette. No VIP-specific scaling/offsets. */
+.vipRoomActive .centerBottle{left:50%!important;top:50%!important;transform:translate(-50%,-50%)!important;z-index:9!important}
+.vipRoomActive .centerBottle .turnText{top:auto!important}
+.vipRoomActive .centerBottle .spin{bottom:auto!important}
+.vipRoomActive .rouletteItemWrap{width:118px!important;height:118px!important;margin:4px auto 0!important}
+.vipRoomActive .rouletteItem{width:108px!important;height:108px!important}
+.vipRoomActive .rouletteGlyph{font-size:72px!important}
+@media(max-width:520px){.vipRoomActive .centerBottle{top:50%!important;transform:translate(-50%,-50%)!important}.vipRoomActive .rouletteItemWrap{width:96px!important;height:96px!important}.vipRoomActive .rouletteItem{width:92px!important;height:92px!important}.vipRoomActive .rouletteGlyph{font-size:61px!important}}
