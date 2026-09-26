@@ -758,7 +758,7 @@ function renderPlayers(v,demoMode=isDemoMode(),created=readTableSettings(room)){
   if(created){renderCreatedTablePlayers(box,created);return}
   const all=demoMode?demoRoster():realRoster(v);
   all.forEach((p,i)=>{
-    const [x,y]=POS[i],b=document.createElement('button');
+    const vipPos=VIP_ROOM_THEMES[room]?[[15,15],[38,8],[62,8],[85,15],[10,40],[90,40],[10,67],[90,67],[27,88],[50,94],[73,88]]:POS;const [x,y]=vipPos[i],b=document.createElement('button');
     b.type='button';b.dataset.slot=String(i);b.dataset.playerId=p.id||`demo-${i}`;
     b.className=`person ${p.real?'real':'demo'} ${p.self?'self':''} ${p.turn?'turn':''} ${p.target?'target':''}`;
     b.style.left=x+'%';b.style.top=y+'%';

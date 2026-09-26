@@ -1512,3 +1512,10 @@ body.heartDuelActive .centerBottle{visibility:hidden!important;opacity:0!importa
 .game[data-theme^="vip-"] .chatArea{background:linear-gradient(180deg,color-mix(in srgb,var(--chat-accent) 6%,#091019 94%),#071019)!important;border-top:1px solid color-mix(in srgb,var(--chat-accent) 32%,transparent)}
 .game[data-theme^="vip-"] .composer{background:rgba(5,8,12,.92)!important;border-top-color:color-mix(in srgb,var(--chat-accent) 28%,transparent)}
 .game[data-theme^="vip-"] #turnText{color:#fff;background:rgba(0,0,0,.42);padding:7px 12px;border:1px solid color-mix(in srgb,var(--chat-accent) 50%,transparent);border-radius:999px;box-shadow:0 0 18px color-mix(in srgb,var(--chat-accent) 20%,transparent)}
+
+/* VIP rooms: force players back around the table, never in one horizontal strip */
+.vipRoomActive .people{position:absolute!important;inset:96px 0 58px!important;display:block!important;overflow:visible!important}
+.vipRoomActive .person{position:absolute!important;display:block!important;width:78px!important;transform:translate(-50%,-50%)!important;margin:0!important}
+.vipRoomActive .photo{width:72px!important;height:82px!important}
+.vipRoomActive .centerBottle{left:50%!important;top:51%!important;transform:translate(-50%,-50%) scale(.78)!important;z-index:5!important}
+@media (max-width:520px) and (max-height:720px){.vipRoomActive .people{inset:88px 0 52px!important}.vipRoomActive .person{width:72px!important}.vipRoomActive .photo{width:66px!important;height:75px!important}}
