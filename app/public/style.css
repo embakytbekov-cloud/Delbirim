@@ -122,19 +122,9 @@ body.heartDuelActive .centerBottle{visibility:hidden!important;opacity:0!importa
 @keyframes slapPhotoShake{0%,100%{transform:translateX(0) rotate(0)}20%{transform:translateX(9px) rotate(2.5deg)}42%{transform:translateX(-8px) rotate(-2deg)}64%{transform:translateX(6px) rotate(1.4deg)}82%{transform:translateX(-3px) rotate(-.8deg)}}
 @media(max-width:520px){.duel3dFx.targetRight{left:78%!important;top:99px!important}}
 
-/* Telegram mini-app compact viewport proportions (match reference layout).
-   --tg-vh is set from window.Telegram.WebApp.viewportHeight in client.js and kept
-   live on expand/keyboard/orientation changes; 100dvh is only the pre-JS fallback.
-   The game area is a flex child sized by percentage (57%), never a fixed px
-   min/max — a fixed px clamp is what previously ate almost the whole screen on
-   short Telegram viewports. */
+/* Compact appearance only. The viewport/scroll contract below also applies to
+   wide Telegram windows and landscape phones. Seat coordinates stay in JS. */
 @media (max-width:520px){
-  html,body{height:100%;min-height:100%;overflow:hidden}
-  .game{height:var(--tg-vh,100dvh);min-height:0!important;display:flex;flex-direction:column;overflow:hidden}
-  .table{flex:0 0 57%;height:auto!important;min-height:0!important;max-height:none!important;overflow:hidden}
-  .chatArea{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;overflow:hidden}
-  .feed{flex:1 1 auto;min-height:0!important;max-height:none!important;overflow:auto;padding-top:10px;padding-bottom:10px}
-  .composer{position:relative!important;flex:0 0 auto;height:58px!important}
   .people{inset:96px 0 58px!important}
   .person{width:78px!important}
   .photo{width:72px!important;height:82px!important;border-radius:12px!important}
@@ -147,9 +137,8 @@ body.heartDuelActive .centerBottle{visibility:hidden!important;opacity:0!importa
   .heartDuel{top:51%!important;transform:translate(-50%,-50%) scale(.9)!important;transform-origin:center!important}
 }
 
-/* Extra-short viewports (small phones, or Telegram not yet expanded): the table
-   keeps the same 57% share of the real height, we just shrink the avatars
-   further so nothing inside that share gets cut off. */
+/* Smaller cards for short browser viewports. viewport.js also fits cards when
+   Telegram's actual visible height is shorter than the browser viewport. */
 @media (max-width:520px) and (max-height:720px){
   .people{inset:88px 0 52px!important}
   .person{width:72px!important}
@@ -1550,3 +1539,41 @@ body.heartDuelActive .centerBottle{visibility:hidden!important;opacity:0!importa
 .vipRoomActive .centerBottle .spin{position:absolute!important;left:50%!important;top:128px!important;bottom:auto!important;transform:translateX(-50%)!important;white-space:nowrap!important}
 @media(max-width:520px){.vipRoomActive .centerBottle{top:39%!important}.vipRoomActive .centerBottle .turnText{top:-42px!important}.vipRoomActive .centerBottle .spin{top:108px!important}}
 
+
+/* One bounded viewport from the root down to the independently scrolling feed.
+   Keep this contract after theme/VIP rules so visual themes cannot reintroduce
+   the old 700px table or 340px feed minimums. */
+html.roomViewport,
+.roomViewport body {
+  width:100%;height:var(--room-height,100dvh);min-height:0;overflow:hidden;
+  overscroll-behavior:none;
+}
+.roomViewport #app {height:100%;min-height:0;overflow:hidden}
+.roomViewport .game {
+  height:100%;min-height:0;display:flex;flex-direction:column;overflow:hidden;
+  padding-top:var(--room-safe-top,env(safe-area-inset-top,0px));
+  padding-right:var(--room-safe-right,env(safe-area-inset-right,0px));
+  padding-bottom:var(--room-safe-bottom,env(safe-area-inset-bottom,0px));
+  padding-left:var(--room-safe-left,env(safe-area-inset-left,0px));
+  background:var(--chat-bg,#08111a);
+}
+.roomViewport .game>.table {
+  flex:0 0 min(520px,calc(100% - min(140px,30%)));
+  height:auto;min-height:0;max-height:none;overflow:hidden;
+}
+.roomViewport .game>.chatArea {
+  flex:1 1 0;min-height:0;display:flex;flex-direction:column;overflow:hidden;
+}
+.roomViewport .feed {
+  flex:1 1 0;min-height:0;max-height:none;overflow-y:auto;overflow-x:hidden;
+  padding-top:10px;padding-bottom:10px;overscroll-behavior-y:contain;
+  -webkit-overflow-scrolling:touch;
+}
+.roomViewport .composer {
+  position:relative;flex:0 0 58px;height:58px;min-height:58px;
+  padding-bottom:6px; /* Safe area is already reserved by .game. */
+}
+.roomViewport .composer input {font-size:16px} /* Avoid iOS input auto-zoom. */
+.roomViewport .game .people .person {
+  transform:translate(-50%,-50%) scale(var(--room-player-scale,1))!important;
+}
