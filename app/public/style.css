@@ -1548,7 +1548,10 @@ html.roomViewport,
   width:100%;height:var(--room-height,100dvh);min-height:0;overflow:hidden;
   overscroll-behavior:none;
 }
-.roomViewport #app {height:100%;min-height:0;overflow:hidden}
+.roomViewport #app {
+  position:fixed;top:var(--room-top,0px);left:0;right:0;
+  height:var(--room-height,100dvh);min-height:0;overflow:hidden;
+}
 .roomViewport .game {
   height:100%;min-height:0;display:flex;flex-direction:column;overflow:hidden;
   padding-top:var(--room-safe-top,env(safe-area-inset-top,0px));
@@ -1558,7 +1561,9 @@ html.roomViewport,
   background:var(--chat-bg,#08111a);
 }
 .roomViewport .game>.table {
-  flex:0 0 min(520px,calc(100% - min(140px,30%)));
+  /* Cap the table itself, not just the outer room. Keep at least 40% for chat
+     even when Telegram's viewport is shorter than the phone's CSS viewport. */
+  flex:0 0 min(400px,60%);
   height:auto;min-height:0;max-height:none;overflow:hidden;
 }
 .roomViewport .game>.chatArea {
