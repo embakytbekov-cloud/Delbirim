@@ -24,12 +24,17 @@ export function initRoomViewport() {
     root.classList.toggle('roomViewport', inTelegram || mobile.matches);
     const stable = inTelegram && (positive(tg.viewportStableHeight) ? tg.viewportStableHeight : tg.viewportHeight);
     let height = positive(stable) ? stable : window.innerHeight;
+    let top = 0;
     // iOS can resize the visual viewport for the keyboard before Telegram sends
     // a stable update. Do not resize the layout for pinch-to-zoom gestures.
     if (visual && positive(visual.height) && Math.abs(visual.scale - 1) < .01) {
       height = Math.min(height, visual.height);
+      // Focusing an input can pan iOS's visual viewport without resizing it.
+      // Anchor the fixed room to that origin as well as fitting its height.
+      top = Math.max(0, visual.offsetTop);
     }
     root.style.setProperty('--room-height', `${height}px`);
+    root.style.setProperty('--room-top', `${top}px`);
     for (const edge of ['top', 'right', 'bottom', 'left']) {
       const device = inTelegram ? tg.safeAreaInset?.[edge] : undefined;
       const content = inTelegram ? tg.contentSafeAreaInset?.[edge] : undefined;
@@ -57,6 +62,7 @@ export function initRoomViewport() {
   window.addEventListener('resize', schedule);
   window.addEventListener('orientationchange', schedule);
   visual?.addEventListener('resize', schedule);
+  visual?.addEventListener('scroll', schedule);
   mobile.addEventListener('change', schedule);
   if (people) {
     new ResizeObserver(fitPlayers).observe(people);

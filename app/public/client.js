@@ -1,4 +1,4 @@
-import { initRoomViewport } from './viewport.js?v=20260927-room-fit';
+import { initRoomViewport } from './viewport.js?v=20260927-compact-table';
 // Initialize after the synchronous room markup below has been created.
 queueMicrotask(initRoomViewport);
 const root=document.querySelector('#app');
