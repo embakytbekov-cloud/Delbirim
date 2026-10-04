@@ -1,0 +1,111 @@
+/* DELBIRIM — exact Emotion gift placement from the user's reference image.
+   This file is intentionally separate and loaded after style.css so old legacy
+   gift rules cannot override these coordinates. */
+
+/* The avatar itself is the positioning anchor and props may hang outside it. */
+.photo{overflow:visible!important;position:relative!important}
+
+/* HEADWEAR — upper-left outside corner, overlapping the frame like the crown. */
+.persistentEmotionProp-top{
+  position:absolute!important;
+  left:-10px!important;
+  top:-15px!important;
+  right:auto!important;
+  bottom:auto!important;
+  width:28px!important;
+  height:28px!important;
+  transform:none!important;
+  z-index:140!important;
+  overflow:visible!important;
+}
+.persistentEmotionProp-top .persistentEmotionToy{width:28px!important;height:28px!important}
+.persistentEmotionProp-top .emotionToyBack,
+.persistentEmotionProp-top .emotionToyFront{font-size:25px!important}
+.persistentEmotionProp-top .emotionToyGlass{left:5px!important;top:3px!important;width:11px!important;height:5px!important}
+.persistentEmotionProp-top .emotionToyShadow{left:4px!important;right:4px!important;bottom:0!important;height:6px!important}
+
+/* ORDINARY EMOTION GIFT — outside the right edge and slightly below center,
+   matching the orange drink in the reference. */
+.persistentEmotionProp-corner{
+  position:absolute!important;
+  right:-16px!important;
+  top:88%!important;
+  left:auto!important;
+  bottom:auto!important;
+  width:25px!important;
+  height:25px!important;
+  transform:translateY(-50%)!important;
+  z-index:138!important;
+  overflow:visible!important;
+}
+.persistentEmotionProp-corner .persistentEmotionToy{width:25px!important;height:25px!important}
+.persistentEmotionProp-corner .emotionToyBack,
+.persistentEmotionProp-corner .emotionToyFront{font-size:22px!important}
+.persistentEmotionProp-corner .emotionToyGlass{left:5px!important;top:3px!important;width:10px!important;height:4px!important}
+.persistentEmotionProp-corner .emotionToyShadow{left:3px!important;right:3px!important;bottom:0!important;height:5px!important}
+
+/* KISS — visible inside the portrait, not under or outside it. */
+.kissCover{
+  position:absolute!important;
+  inset:1px!important;
+  overflow:hidden!important;
+  border-radius:inherit!important;
+  z-index:136!important;
+  pointer-events:none!important;
+}
+.kissCover i{
+  position:absolute!important;
+  width:auto!important;
+  height:auto!important;
+  font-size:18px!important;
+  line-height:1!important;
+  transform:rotate(var(--r))!important;
+  transform-origin:center!important;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.55))!important;
+}
+.kissCoverFull i{font-size:22px!important}
+
+@media(max-width:520px){
+  .persistentEmotionProp-top{left:-9px!important;top:-14px!important;width:26px!important;height:26px!important}
+  .persistentEmotionProp-top .persistentEmotionToy{width:26px!important;height:26px!important}
+  .persistentEmotionProp-top .emotionToyBack,.persistentEmotionProp-top .emotionToyFront{font-size:23px!important}
+
+  .persistentEmotionProp-corner{right:-15px!important;top:88%!important;width:23px!important;height:23px!important}
+  .persistentEmotionProp-corner .persistentEmotionToy{width:23px!important;height:23px!important}
+  .persistentEmotionProp-corner .emotionToyBack,.persistentEmotionProp-corner .emotionToyFront{font-size:20px!important}
+
+  .kissCover i{font-size:17px!important}
+  .kissCoverFull i{font-size:21px!important}
+}
+
+
+/* 2026-09-26 — make the two unclear Emotion icons readable at a glance. */
+.emotionToyMud .emotionToyBack,
+.emotionToyMud .emotionToyFront{font-size:0!important;color:transparent!important;text-shadow:none!important}
+.emotionToyMud::before{
+  content:"";
+  position:absolute;
+  left:13%;top:16%;
+  width:72%;height:64%;
+  border-radius:57% 43% 61% 39% / 46% 58% 42% 54%;
+  background:
+    radial-gradient(circle at 32% 25%,rgba(255,255,255,.24) 0 7%,transparent 8%),
+    radial-gradient(circle at 66% 67%,#4a382f 0 18%,transparent 19%),
+    linear-gradient(145deg,#514139 0%,#241b18 44%,#090807 100%);
+  box-shadow:inset 3px 3px 5px rgba(255,255,255,.10),inset -5px -6px 8px rgba(0,0,0,.55),0 4px 7px rgba(0,0,0,.45);
+  transform:rotate(-9deg);
+  z-index:3;
+}
+.emotionToyMud::after{
+  content:"";
+  position:absolute;
+  left:8%;top:64%;
+  width:16%;height:14%;
+  border-radius:58% 42% 55% 45%;
+  background:#1a1412;
+  box-shadow:28px 7px 0 -1px #30241f,43px -4px 0 -3px #120e0c;
+  transform:rotate(17deg);
+  z-index:3;
+}
+.emotionToyMud .emotionToyGlass{display:none!important}
+.emotionToyMud .emotionToyShadow{opacity:.75!important}

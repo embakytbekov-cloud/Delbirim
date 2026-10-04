@@ -29,6 +29,11 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
+    if (url.pathname.startsWith("/api/friends/")) {
+      const id = env.ROOMS.idFromName("__delbirim_social__");
+      return env.ROOMS.get(id).fetch(request);
+    }
+
     if (url.pathname === WS_PREFIX || url.pathname.startsWith(WS_PREFIX + "/")) {
       // Reject non-upgrade traffic here rather than paying for a DO wake-up.
       if (request.headers.get("Upgrade") !== "websocket") {

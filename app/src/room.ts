@@ -171,7 +171,76 @@ export class Room extends DurableObject<Env> {
    * (`/ws/<room>`). Anything else is a routing bug in the Worker, not a client
    * error, so it fails loudly rather than quietly serving something.
    */
+  private async handleFriendApi(request: Request, url: URL): Promise<Response> {
+    type FriendRequestRow = { from: string; to: string; name: string; photo: string; createdAt: number };
+    type SocialState = { requests: FriendRequestRow[]; friends: Record<string, string[]> };
+    const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
+      status,
+      headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
+    });
+    const cleanId = (v: unknown) => typeof v === "string" ? v.trim().slice(0, 64) : "";
+    const loadSocial = async (): Promise<SocialState> => (await this.ctx.storage.get<SocialState>("social")) ?? { requests: [], friends: {} };
+    const saveSocial = async (state: SocialState) => this.ctx.storage.put("social", state);
+
+    if (request.method === "GET" && url.pathname === "/api/friends/inbox") {
+      const playerId = cleanId(url.searchParams.get("playerId"));
+      if (!playerId) return json({ error: "playerId required" }, 400);
+      const state = await loadSocial();
+      return json({ requests: state.requests.filter((r) => r.to === playerId).slice(-30).reverse() });
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/friends/status") {
+      const playerId = cleanId(url.searchParams.get("playerId"));
+      const otherId = cleanId(url.searchParams.get("otherId"));
+      if (!playerId || !otherId) return json({ error: "playerId and otherId required" }, 400);
+      const state = await loadSocial();
+      const isFriend = (state.friends[playerId] ?? []).includes(otherId);
+      const pendingOutgoing = state.requests.some((r) => r.from === playerId && r.to === otherId);
+      const pendingIncoming = state.requests.some((r) => r.from === otherId && r.to === playerId);
+      return json({ isFriend, pendingOutgoing, pendingIncoming });
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/friends/request") {
+      let body: Record<string, unknown>;
+      try { body = await request.json() as Record<string, unknown>; } catch { return json({ error: "invalid json" }, 400); }
+      const from = cleanId(body.from), to = cleanId(body.to);
+      if (!from || !to || from === to) return json({ error: "invalid players" }, 400);
+      const state = await loadSocial();
+      if ((state.friends[from] ?? []).includes(to)) return json({ ok: true, status: "friends" });
+      if (!state.requests.some((r) => r.from === from && r.to === to)) {
+        const name = typeof body.name === "string" ? body.name.trim().slice(0, 48) : "Игрок";
+        const rawPhoto = typeof body.photo === "string" ? body.photo.trim() : "";
+        const photo = rawPhoto.startsWith("https://") && rawPhoto.length <= 1200 ? rawPhoto : "";
+        state.requests.push({ from, to, name: name || "Игрок", photo, createdAt: Date.now() });
+        if (state.requests.length > 500) state.requests = state.requests.slice(-500);
+        await saveSocial(state);
+      }
+      return json({ ok: true, status: "requested" });
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/friends/respond") {
+      let body: Record<string, unknown>;
+      try { body = await request.json() as Record<string, unknown>; } catch { return json({ error: "invalid json" }, 400); }
+      const playerId = cleanId(body.playerId), from = cleanId(body.from);
+      const accept = body.accept === true;
+      if (!playerId || !from || playerId === from) return json({ error: "invalid players" }, 400);
+      const state = await loadSocial();
+      const exists = state.requests.some((r) => r.from === from && r.to === playerId);
+      state.requests = state.requests.filter((r) => !(r.from === from && r.to === playerId));
+      if (accept && exists) {
+        state.friends[playerId] = Array.from(new Set([...(state.friends[playerId] ?? []), from])).slice(-300);
+        state.friends[from] = Array.from(new Set([...(state.friends[from] ?? []), playerId])).slice(-300);
+      }
+      await saveSocial(state);
+      return json({ ok: true, accepted: accept && exists });
+    }
+
+    return json({ error: "not found" }, 404);
+  }
+
   override async fetch(request: Request): Promise<Response> {
+    const url = new URL(request.url);
+    if (url.pathname.startsWith("/api/friends/")) return this.handleFriendApi(request, url);
     if (request.headers.get("Upgrade") !== "websocket") {
       return new Response("expected a websocket upgrade", { status: 426 });
     }
